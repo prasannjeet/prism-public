@@ -1,0 +1,16 @@
+model,config,k,passk,n_scenarios
+gemini-3.1-flash-lite,C1,1,0.0,88
+gemini-3.1-flash-lite,C1,2,0.0,88
+gemini-3.1-flash-lite,C1,3,0.0,57
+gemini-3.1-flash-lite,C2,1,0.5681818181818182,88
+gemini-3.1-flash-lite,C2,2,0.5265151515151515,88
+gemini-3.1-flash-lite,C2,3,0.6140350877192983,57
+gemini-3.1-flash-lite,C3,1,0.5984848484848485,88
+gemini-3.1-flash-lite,C3,2,0.5606060606060607,88
+gemini-3.1-flash-lite,C3,3,0.7719298245614035,57
+gemini-3.1-flash-lite,C4,1,0.4375,88
+gemini-3.1-flash-lite,C4,2,0.37121212121212116,88
+gemini-3.1-flash-lite,C4,3,0.5263157894736842,57
+gemini-3.1-flash-lite,C5,1,0.6022727272727273,88
+gemini-3.1-flash-lite,C5,2,0.5568181818181818,88
+gemini-3.1-flash-lite,C5,3,0.7543859649122807,57

@@ -61,7 +61,10 @@ pytest
 
 The test suite is fully offline and deterministic (tests that would hit a real model API are
 marked `live` and excluded by default). It includes an oracle sweep that drives every one of the
-88 scenarios to its reference completion, proving each is solvable.
+88 scenarios to its reference completion, proving each reference outcome reachable by the engine.
+(For the four escalate-expected scenarios the oracle drives the dispatcher directly; the two
+workflows hosting them never advertise the escalate tool to agents, an affordance gap discussed
+in the paper's Limitations.)
 
 ## Run a scenario end to end, offline
 
@@ -172,6 +175,11 @@ configuration (no `admitted_` counterpart can be non-zero for a structural rejec
 | `bootstrap_deltas.csv` | (model, baseline, scoring) | `delta` is the C5-minus-baseline success-rate difference under a paired scenario bootstrap (resamples scenarios, not runs); percentile 95% CI and two-sided p-value; `n_resamples` = 10,000, fixed seed |
 | `mcnemar.csv` | (model, baseline, scoring) | Exact McNemar over the per-scenario all-seeds-pass collapse: `b` = scenarios where C5 passes and the baseline fails, `c` = the reverse, `p_value` exact binomial |
 | `scoring_delta.csv` | (model, config) | Strict vs refined pass counts and rates; `n_rescued` = cells that pass refined but not strict |
+
+`results/turnbudget-01/aggregate/` holds the same eight aggregate files for the
+single-model (gemini-3.1-flash-lite) continuation-budget sensitivity re-run
+quoted in the paper's Limitations (47.8% to 48.1%); its raw transcripts are not
+shipped, only the aggregates behind those two numbers.
 
 ## License
 

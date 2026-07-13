@@ -1,0 +1,9 @@
+model,baseline,scoring,b,c,n_discordant,p_value
+gemini-3.1-flash-lite,C1,strict,47,0,47,1.4210854715202004e-14
+gemini-3.1-flash-lite,C2,strict,16,13,29,0.711071103811264
+gemini-3.1-flash-lite,C3,strict,5,6,11,1.0
+gemini-3.1-flash-lite,C4,strict,18,2,20,0.0004024505615234375
+gemini-3.1-flash-lite,C1,refined,47,0,47,1.4210854715202004e-14
+gemini-3.1-flash-lite,C2,refined,16,13,29,0.711071103811264
+gemini-3.1-flash-lite,C3,refined,5,6,11,1.0
+gemini-3.1-flash-lite,C4,refined,18,2,20,0.0004024505615234375
