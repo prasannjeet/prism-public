@@ -1,0 +1,30 @@
+id: w2-correction-branch-switch
+workflow: incident_investigation
+category: correction_branch_switch
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the payments-api is having trouble", field: affected_service, value: payments-api}
+      - {say: "I think the server is down", field: symptom, value: server_down}
+      - {say: "the outage began at 11:00 today", field: outage_time, value: "2026-01-15T11:00:00"}
+  - intent: correct
+    parts:
+      - {say: "actually no, the server is up, it's just very slow, this is a slow_response", field: symptom, value: slow_response}
+  - parts:
+      - {say: "the slow window is 10:45 to 11:15", field: latency_window, value: "10:45-11:15 UTC"}
+      - {say: "pull the metrics please", field: metrics_check, value: ""}
+  - parts:
+      - {say: "the cause was database connection pool exhaustion", field: latency_root_cause, value: "Connection pool exhaustion forced requests to queue, inflating latency in the window."}
+  - intent: request_commit
+    say: "that's correct now, file it"
+expected:
+  final_state:
+    affected_service: payments-api
+    symptom: slow_response
+    latency_window: "10:45-11:15 UTC"
+    latency_root_cause: "Connection pool exhaustion forced requests to queue, inflating latency in the window."
+  valid_completion: [committed]
+  required_evidence: [metrics_check]
+  forbidden: [inactive_branch_contamination]
+tool_script:
+  check_metrics: "Active DB connections pinned at pool max 10:45-11:15; wait time per request climbed sharply."

@@ -1,0 +1,36 @@
+id: w3-duplicate-commit-connectivity
+workflow: support_diagnosis
+category: duplicate_commit
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-101112", field: account_id, value: ACC-101112}
+      - {say: "email kira@example.com", field: customer_email, value: kira@example.com}
+      - {say: "enterprise plan", field: plan_tier, value: enterprise}
+      - {say: "no internet at the office since this morning", field: issue_summary, value: "No internet at the office since this morning"}
+      - {say: "connectivity issue", field: category, value: connectivity}
+  - parts:
+      - {say: "it started on the 14th of January", field: outage_started, value: "2026-01-14"}
+      - {say: "check the service status", field: service_status, value: ""}
+      - {say: "and run a line test", field: line_test, value: ""}
+  - parts:
+      - {say: "a fibre cut in the area is the cause, that's the resolution", field: connectivity_resolution, value: "A confirmed fibre cut in the area caused the outage; a repair crew is dispatched with an ETA."}
+  - intent: request_commit
+    say: "that's the conclusion, file the ticket"
+  - intent: request_commit
+    say: "did that go through? file it again just to be safe"
+expected:
+  final_state:
+    account_id: ACC-101112
+    customer_email: kira@example.com
+    plan_tier: enterprise
+    issue_summary: "No internet at the office since this morning"
+    category: connectivity
+    outage_started: "2026-01-14"
+    connectivity_resolution: "A confirmed fibre cut in the area caused the outage; a repair crew is dispatched with an ETA."
+  valid_completion: [committed]
+  required_evidence: [service_status, line_test]
+  forbidden: [landed_duplicate_commit]
+tool_script:
+  check_service_status: "Major outage flagged for the area following reported physical line damage."
+  run_line_test: "Line test fails end to end with no signal, consistent with a severed fibre."

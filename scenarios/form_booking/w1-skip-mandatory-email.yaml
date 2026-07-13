@@ -1,0 +1,30 @@
+id: w1-skip-mandatory-email
+workflow: form_booking
+category: skip_mandatory_attempt
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "deep clean please", field: service_type, value: deep_clean}
+      - {say: "for Nadia Hassan", field: customer_name, value: Nadia Hassan}
+  - intent: skip
+    say: "I'd rather not give my email, can we skip that?"
+  - parts:
+      - {say: "alright, fine, it's nadia@example.com", field: customer_email, value: nadia@example.com}
+      - {say: "the 15th of March", field: preferred_date, value: "2026-03-15"}
+      - {say: "afternoon", field: preferred_time, value: afternoon}
+      - {say: "the home is 95 square metres", field: home_size_sqm, value: "95"}
+      - {say: "no, leave the appliances", field: appliances_inside, value: "no"}
+  - intent: request_commit
+    say: "that's everything, please book it"
+expected:
+  final_state:
+    service_type: deep_clean
+    customer_name: Nadia Hassan
+    customer_email: nadia@example.com
+    preferred_date: "2026-03-15"
+    preferred_time: afternoon
+    home_size_sqm: "95"
+    appliances_inside: "no"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: []

@@ -1,0 +1,35 @@
+id: w1-invalid-then-repair-moveout
+workflow: form_booking
+category: invalid_then_repair
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "move-out clean please", field: service_type, value: move_out}
+      - {say: "for Sam Wilson", field: customer_name, value: Sam Wilson}
+      - {say: "email sam@example.com", field: customer_email, value: sam@example.com}
+      - {say: "the 10th of March", field: preferred_date, value: "2026-03-10"}
+      - {say: "afternoon", field: preferred_time, value: afternoon}
+  - intent: invalid
+    parts:
+      - {say: "it's a big place, about 25 rooms", field: num_rooms, value: "25"}
+  - intent: correct
+    parts:
+      - {say: "sorry, I miscounted, it's actually 6 rooms", field: num_rooms, value: "6"}
+  - parts:
+      - {say: "yes, the deposit is in a protection scheme", field: deposit_protection, value: "yes"}
+      - {say: "landlord's email is owner@lettings.com", field: landlord_email, value: owner@lettings.com}
+  - intent: request_commit
+    say: "that's all correct now, please book it"
+expected:
+  final_state:
+    service_type: move_out
+    customer_name: Sam Wilson
+    customer_email: sam@example.com
+    preferred_date: "2026-03-10"
+    preferred_time: afternoon
+    num_rooms: "6"
+    deposit_protection: "yes"
+    landlord_email: owner@lettings.com
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_invalid_value]

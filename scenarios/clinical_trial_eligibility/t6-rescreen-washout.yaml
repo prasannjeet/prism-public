@@ -1,0 +1,105 @@
+id: t6-rescreen-washout
+workflow: clinical_trial_eligibility
+category: insufficient_evidence_escalate
+branch_field: cancer_type
+beats:
+  - parts:
+      - {say: "consent signed", field: consent_signed, value: "yes"}
+      - {say: "screening January 10th", field: screen_date, value: "2026-01-10"}
+      - {say: "C1D1 February 1st", field: planned_c1d1, value: "2026-02-01"}
+      - {say: "age 61", field: patient_age, value: "61"}
+      - {say: "ECOG 1", field: ecog_status, value: "1"}
+      - {say: "life expectancy over 12 weeks", field: life_expectancy_ge_12wk, value: "yes"}
+      - {say: "it is a lymphoma", field: cancer_type, value: lymphoma}
+  - parts:
+      - {say: "measurable disease present", field: measurable_disease_present, value: "yes"}
+      - {say: "subtype mantle cell", field: lymphoma_subtype, value: mcl}
+      - {say: "cyclin D1 positive", field: mcl_cyclin_d1, value: positive}
+      - {say: "TP53 absent", field: mcl_tp53, value: absent}
+      - {say: "run pathology confirmation", field: dx_confirmed_ev, value: ""}
+      - {say: "run imaging read", field: measurable_disease_ev, value: ""}
+      - {say: "run MCL risk pathology", field: mcl_risk_ev, value: ""}
+  - parts:
+      - {say: "there was prior anticancer therapy", field: prior_therapy_any, value: "yes"}
+      - {say: "most recent class was chemotherapy", field: prior_class, value: chemo}
+      - {say: "last dose was January 5th", field: last_dose_date, value: "2026-01-05"}
+      - {say: "the washout will not have fully elapsed by C1D1", field: washout_elapsed_by_c1d1, value: "no"}
+      - {say: "pull the prior-therapy records", field: prior_records_ev, value: ""}
+  - parts:
+      - {say: "marrow adequate", field: marrow_adequate, value: "yes"}
+      - {say: "transfusion independent", field: transfusion_independent, value: "yes"}
+      - {say: "run CBC", field: cbc_ev, value: ""}
+      - {say: "CrCl 90", field: crcl_mlmin, value: "90"}
+      - {say: "no hepatic involvement", field: hepatic_involvement, value: "no"}
+      - {say: "bilirubin 1x", field: bili_x_uln, value: "1"}
+      - {say: "transaminases 1x", field: transaminase_x_uln, value: "1"}
+      - {say: "run chemistry and LFT", field: chem_lft_ev, value: ""}
+      - {say: "coag not elevated", field: coag_elevated, value: "no"}
+  - parts:
+      - {say: "QTcF 420", field: qtcf_ms, value: "420"}
+      - {say: "LVEF 60", field: lvef_pct, value: "60"}
+      - {say: "no cardiac history", field: cardiac_history, value: none}
+      - {say: "run ECG", field: ecg_ev, value: ""}
+      - {say: "run echo", field: echo_ev, value: ""}
+  - parts:
+      - {say: "HIV negative", field: hiv_status, value: negative}
+      - {say: "HBsAg negative", field: hbsag, value: negative}
+      - {say: "anti-HBc negative", field: anti_hbc, value: negative}
+      - {say: "HCV antibody negative", field: hcv_ab, value: negative}
+      - {say: "run serology", field: serology_ev, value: ""}
+  - parts:
+      - {say: "no prohibited conmed", field: prohibited_conmed, value: "no"}
+      - {say: "reconcile conmeds", field: conmed_ev, value: ""}
+      - {say: "steroid 5 mg", field: steroid_mg_pred_eq, value: "5"}
+      - {say: "no second malignancy", field: second_malignancy, value: none}
+      - {say: "not of childbearing potential", field: childbearing_potential, value: "no"}
+  - intent: escalate_request
+    say: "the washout is incomplete by C1D1, which is transient and correctable but not something I can sign off on now, please escalate this for a rescreen decision"
+expected:
+  final_state:
+    consent_signed: "yes"
+    screen_date: "2026-01-10"
+    planned_c1d1: "2026-02-01"
+    patient_age: "61"
+    ecog_status: "1"
+    life_expectancy_ge_12wk: "yes"
+    cancer_type: lymphoma
+    measurable_disease_present: "yes"
+    lymphoma_subtype: mcl
+    mcl_cyclin_d1: positive
+    mcl_tp53: absent
+    prior_therapy_any: "yes"
+    prior_class: chemo
+    last_dose_date: "2026-01-05"
+    washout_elapsed_by_c1d1: "no"
+    marrow_adequate: "yes"
+    transfusion_independent: "yes"
+    crcl_mlmin: "90"
+    hepatic_involvement: "no"
+    bili_x_uln: "1"
+    transaminase_x_uln: "1"
+    coag_elevated: "no"
+    qtcf_ms: "420"
+    lvef_pct: "60"
+    cardiac_history: none
+    hiv_status: negative
+    hbsag: negative
+    anti_hbc: negative
+    hcv_ab: negative
+    prohibited_conmed: "no"
+    steroid_mg_pred_eq: "5"
+    second_malignancy: none
+    childbearing_potential: "no"
+  valid_completion: [escalated]
+  required_evidence: [ecg_ev, conmed_ev]
+  forbidden: [inactive_branch_contamination]
+tool_script:
+  pathology_assay: "Mantle cell lymphoma, cyclin D1 positive."
+  imaging_recist: "Lugano-measurable disease."
+  prior_records: "Most recent regimen: chemotherapy, last dose 2026-01-05; washout incomplete by planned C1D1."
+  cbc: "ANC 1800, platelets 120k, hemoglobin 11.2 g/dL."
+  chem_lft: "Bilirubin 0.8, AST 22, ALT 18, creatinine 0.9."
+  ecg_12lead: "QTcF 420 ms."
+  echo_muga: "LVEF 60 percent."
+  viral_serology: "HIV negative, HBsAg negative, anti-HBc negative, HCV antibody negative."
+  conmed_recon: "No prohibited agents present."

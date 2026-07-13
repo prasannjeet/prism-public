@@ -1,0 +1,37 @@
+id: t4-invalid-then-repair-medical
+workflow: travel_insurance_claim
+category: invalid_then_repair
+branch_field: claim_type
+beats:
+  - intent: invalid
+    parts:
+      - {say: "my policy number is AB1", field: policy_number, value: AB1}
+      - {say: "I bought it on 2026-09-01", field: policy_purchase_date, value: "2026-09-01"}
+  - parts:
+      - {say: "sorry, the policy number is POL-500600", field: policy_number, value: POL-500600}
+      - {say: "and it was purchased on 2025-12-05", field: policy_purchase_date, value: "2025-12-05"}
+      - {say: "email rafa@example.com", field: claimant_email, value: rafa@example.com}
+      - {say: "this is a medical claim", field: claim_type, value: medical}
+      - {say: "amount 3300", field: claimed_amount, value: "3300"}
+      - {say: "here is the physician statement", field: physician_statement, value: ""}
+      - {say: "medical expense claim", field: medical_subtype, value: expense}
+      - {say: "care was outpatient", field: medical_care_setting, value: outpatient}
+  - parts:
+      - {say: "outpatient treatment is covered, approve it", field: medical_adjudication, value: "The outpatient treatment is covered under the policy; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-500600
+    policy_purchase_date: "2025-12-05"
+    claimant_email: rafa@example.com
+    claim_type: medical
+    claimed_amount: "3300"
+    medical_subtype: expense
+    medical_care_setting: outpatient
+    medical_adjudication: "The outpatient treatment is covered under the policy; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [physician_statement]
+  forbidden: [landed_invalid_value]
+tool_script:
+  upload_physician_statement: "Attending physician confirms outpatient treatment for the stated condition."

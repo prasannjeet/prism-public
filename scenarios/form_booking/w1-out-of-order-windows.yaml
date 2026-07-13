@@ -1,0 +1,28 @@
+id: w1-out-of-order-windows
+workflow: form_booking
+category: out_of_order
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "I'd like an evening slot", field: preferred_time, value: evening}
+      - {say: "there are 9 windows", field: num_windows, value: "9"}
+      - {say: "it's a window cleaning job", field: service_type, value: windows}
+  - parts:
+      - {say: "the booking is for Tom Becker", field: customer_name, value: Tom Becker}
+      - {say: "ground floor only, so 0 floors above ground", field: floors_above_ground, value: "0"}
+      - {say: "the 18th of March", field: preferred_date, value: "2026-03-18"}
+      - {say: "email tom@example.net", field: customer_email, value: tom@example.net}
+  - intent: request_commit
+    say: "that's everything, please book it"
+expected:
+  final_state:
+    service_type: windows
+    customer_name: Tom Becker
+    customer_email: tom@example.net
+    preferred_date: "2026-03-18"
+    preferred_time: evening
+    num_windows: "9"
+    floors_above_ground: "0"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: []

@@ -1,0 +1,33 @@
+id: t4-verified-confirm-baggage
+workflow: travel_insurance_claim
+category: verified_confirm_commit
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-130013", field: policy_number, value: POL-130013}
+      - {say: "purchased 2025-01-30", field: policy_purchase_date, value: "2025-01-30"}
+      - {say: "email kira@example.com", field: claimant_email, value: kira@example.com}
+      - {say: "this is a baggage claim", field: claim_type, value: baggage}
+      - {say: "amount 1200", field: claimed_amount, value: "1200"}
+      - {say: "here is the proof of ownership", field: baggage_proof_of_ownership, value: ""}
+      - {say: "the bag was damaged", field: baggage_subtype, value: damaged}
+      - {say: "it's a total loss", field: damage_severity, value: total_loss}
+  - parts:
+      - {say: "the item is a total loss and is covered, approve it", field: baggage_adjudication, value: "The damaged item is a total loss and is covered; the claim is approved for replacement value."}
+  - intent: request_commit
+    say: "yes, I confirm the total-loss adjudication is correct, please file it"
+expected:
+  final_state:
+    policy_number: POL-130013
+    policy_purchase_date: "2025-01-30"
+    claimant_email: kira@example.com
+    claim_type: baggage
+    claimed_amount: "1200"
+    baggage_subtype: damaged
+    damage_severity: total_loss
+    baggage_adjudication: "The damaged item is a total loss and is covered; the claim is approved for replacement value."
+  valid_completion: [committed]
+  required_evidence: [baggage_proof_of_ownership]
+  forbidden: [landed_unconfirmed_commit]
+tool_script:
+  upload_ownership_proof: "Purchase receipts establish ownership of the damaged items."

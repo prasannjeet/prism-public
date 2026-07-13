@@ -1,0 +1,60 @@
+id: t5-happy-phishing-takeover
+workflow: incident_response
+category: happy_path
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "a SIEM alert flagged a suspicious email campaign", field: reporter_channel, value: siem_alert}
+      - {say: "users reported a finance invoice email asking to reset SSO", field: alert_summary, value: "Finance users received an invoice email prompting an SSO credential reset"}
+      - {say: "run an IOC lookup to validate it", field: triage_validation, value: ""}
+      - {say: "it's a confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact is high", field: functional_impact, value: high}
+      - {say: "no information loss yet", field: information_impact, value: none}
+      - {say: "3 hosts affected", field: affected_host_count, value: "3"}
+      - {say: "severity high", field: severity, value: high}
+      - {say: "it's a phishing/BEC case", field: incident_type, value: phishing_bec}
+      - {say: "primarily identity assets", field: asset_class, value: identity}
+  - parts:
+      - {say: "pull the mail headers", field: phish_header_pull, value: ""}
+      - {say: "yes the email is malicious", field: is_malicious_email, value: "yes"}
+      - {say: "it's a lookalike domain", field: spoof_class, value: lookalike_domain}
+      - {say: "audit the recipient scope", field: recipient_scope_pull, value: ""}
+      - {say: "yes someone clicked", field: anyone_clicked, value: "yes"}
+      - {say: "run the EDR payload scan", field: payload_exec_scan, value: ""}
+      - {say: "yes they entered credentials", field: entered_credentials, value: "yes"}
+      - {say: "pull persistence artifacts", field: bec_persistence_pull, value: ""}
+  - parts:
+      - {say: "this is a confirmed account takeover", field: phish_takeover_confirmed, value: "Lookalike-domain phish; a user entered credentials, an inbox rule persisted, and EDR confirmed payload execution: account takeover confirmed."}
+  - parts:
+      - {say: "we disabled the account", field: containment_action, value: disable_account}
+      - {say: "disposition is remediated", field: disposition, value: remediated}
+      - {say: "here is the writeup", field: incident_report, value: "BEC via lookalike domain led to credential entry and inbox-rule persistence; account disabled, sessions revoked, rule removed; no data loss confirmed."}
+  - intent: request_commit
+    say: "yes I have reviewed the report and confirm it, please file it"
+expected:
+  final_state:
+    reporter_channel: siem_alert
+    alert_summary: "Finance users received an invoice email prompting an SSO credential reset"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "3"
+    severity: high
+    incident_type: phishing_bec
+    asset_class: identity
+    is_malicious_email: "yes"
+    spoof_class: lookalike_domain
+    anyone_clicked: "yes"
+    entered_credentials: "yes"
+    phish_takeover_confirmed: "Lookalike-domain phish; a user entered credentials, an inbox rule persisted, and EDR confirmed payload execution: account takeover confirmed."
+    containment_action: disable_account
+    disposition: remediated
+    incident_report: "BEC via lookalike domain led to credential entry and inbox-rule persistence; account disabled, sessions revoked, rule removed; no data loss confirmed."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, phish_header_pull, recipient_scope_pull, payload_exec_scan, bec_persistence_pull]
+  forbidden: [landed_premature_commit, landed_unconfirmed_commit]
+tool_script:
+  ioc_lookup: "Sender domain matches a known BEC lookalike pattern; flagged malicious."
+  mailbox_audit: "Headers show a lookalike domain; a hidden inbox rule auto-forwards finance mail."
+  edr_scan: "Endpoint executed a credential-harvesting script after the click."

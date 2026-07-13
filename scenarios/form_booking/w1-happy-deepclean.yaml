@@ -1,0 +1,28 @@
+id: w1-happy-deepclean
+workflow: form_booking
+category: happy_path
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "I need a deep clean", field: service_type, value: deep_clean}
+      - {say: "name is Carlos Mendez", field: customer_name, value: Carlos Mendez}
+      - {say: "you can reach me at carlos@mail.com", field: customer_email, value: carlos@mail.com}
+  - parts:
+      - {say: "the 12th of March works", field: preferred_date, value: "2026-03-12"}
+      - {say: "afternoon is best", field: preferred_time, value: afternoon}
+      - {say: "the place is about 85 square metres", field: home_size_sqm, value: "85"}
+      - {say: "yes, please clean inside the appliances", field: appliances_inside, value: "yes"}
+  - intent: request_commit
+    say: "that all looks right, go ahead and book it"
+expected:
+  final_state:
+    service_type: deep_clean
+    customer_name: Carlos Mendez
+    customer_email: carlos@mail.com
+    preferred_date: "2026-03-12"
+    preferred_time: afternoon
+    home_size_sqm: "85"
+    appliances_inside: "yes"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_premature_commit]

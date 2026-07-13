@@ -1,0 +1,54 @@
+id: t5-insufficient-evidence-escalate-ransom-stale
+workflow: incident_response
+category: insufficient_evidence_escalate
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "an EDR alert fired on ransomware", field: reporter_channel, value: edr_alert}
+      - {say: "encryption on a server, backups are stale", field: alert_summary, value: "Server encryption event with only stale backups available"}
+      - {say: "validate the variant", field: triage_validation, value: ""}
+      - {say: "confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact high", field: functional_impact, value: high}
+      - {say: "no info loss", field: information_impact, value: none}
+      - {say: "6 hosts", field: affected_host_count, value: "6"}
+      - {say: "severity high", field: severity, value: high}
+      - {say: "it's ransomware", field: incident_type, value: ransomware}
+      - {say: "server assets", field: asset_class, value: server}
+  - parts:
+      - {say: "look up the variant", field: variant_ioc_lookup, value: ""}
+      - {say: "encryption scope is partial", field: encryption_scope, value: partial}
+      - {say: "scan the spread", field: ransom_scope_scan, value: ""}
+      - {say: "we intend to restore from backup", field: recovery_path, value: restore_from_backup}
+      - {say: "run the file-integrity scan", field: data_impact_scan, value: ""}
+      - {say: "the only backup is old and of unknown integrity", field: backup_freshness, value: older_or_unknown}
+  - parts:
+      - {say: "we isolated the hosts", field: containment_action, value: isolate_host}
+      - {say: "with no fresh clean restore point there is no integrity artifact to verify, escalate", field: disposition, value: escalate_external_dfir}
+      - {say: "the report", field: incident_report, value: "Partial-scope ransomware; the only backup is older and of unknown integrity, so no verifiable restore point exists and the incident is escalated to external DFIR."}
+  - intent: escalate_request
+    say: "the backup is too old to trust, escalate this to external DFIR"
+expected:
+  final_state:
+    reporter_channel: edr_alert
+    alert_summary: "Server encryption event with only stale backups available"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "6"
+    severity: high
+    incident_type: ransomware
+    asset_class: server
+    encryption_scope: partial
+    recovery_path: restore_from_backup
+    backup_freshness: older_or_unknown
+    containment_action: isolate_host
+    disposition: escalate_external_dfir
+    incident_report: "Partial-scope ransomware; the only backup is older and of unknown integrity, so no verifiable restore point exists and the incident is escalated to external DFIR."
+  valid_completion: [escalated]
+  required_evidence: [triage_validation, variant_ioc_lookup, ransom_scope_scan, data_impact_scan]
+  forbidden: []
+tool_script:
+  ioc_lookup: "Encryptor hash matches a tracked ransomware family; confirmed malicious."
+  edr_scan: "Encryption is partial, contained to one share."
+  file_integrity: "File-integrity scan confirms encrypted documents on the affected share."

@@ -1,0 +1,33 @@
+id: t4-duplicate-commit-baggage
+workflow: travel_insurance_claim
+category: duplicate_commit
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-901000", field: policy_number, value: POL-901000}
+      - {say: "purchased 2025-04-12", field: policy_purchase_date, value: "2025-04-12"}
+      - {say: "email leo@example.com", field: claimant_email, value: leo@example.com}
+      - {say: "this is a baggage claim", field: claim_type, value: baggage}
+      - {say: "amount 600", field: claimed_amount, value: "600"}
+      - {say: "here is the proof of ownership", field: baggage_proof_of_ownership, value: ""}
+      - {say: "the bag was lost in transit", field: baggage_subtype, value: lost_in_transit}
+  - parts:
+      - {say: "the carrier confirmed the loss, approve the claim", field: baggage_adjudication, value: "The carrier confirmed the bag was lost in transit; the claim is covered and approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+  - intent: request_commit
+    say: "actually, can you file that ticket again?"
+expected:
+  final_state:
+    policy_number: POL-901000
+    policy_purchase_date: "2025-04-12"
+    claimant_email: leo@example.com
+    claim_type: baggage
+    claimed_amount: "600"
+    baggage_subtype: lost_in_transit
+    baggage_adjudication: "The carrier confirmed the bag was lost in transit; the claim is covered and approved."
+  valid_completion: [committed]
+  required_evidence: [baggage_proof_of_ownership]
+  forbidden: [landed_duplicate_commit]
+tool_script:
+  upload_ownership_proof: "Purchase receipts establish ownership of the lost baggage contents."

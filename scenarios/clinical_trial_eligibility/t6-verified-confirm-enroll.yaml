@@ -1,0 +1,99 @@
+id: t6-verified-confirm-enroll
+workflow: clinical_trial_eligibility
+category: verified_confirm_commit
+branch_field: cancer_type
+beats:
+  - parts:
+      - {say: "the patient signed the ICF before any study procedure", field: consent_signed, value: "yes"}
+      - {say: "screening visit was on January 10th", field: screen_date, value: "2026-01-10"}
+      - {say: "Cycle 1 Day 1 is planned for February 1st", field: planned_c1d1, value: "2026-02-01"}
+      - {say: "the patient is 61", field: patient_age, value: "61"}
+      - {say: "ECOG is 1", field: ecog_status, value: "1"}
+      - {say: "life expectancy is over 12 weeks", field: life_expectancy_ge_12wk, value: "yes"}
+      - {say: "it is a lymphoma", field: cancer_type, value: lymphoma}
+  - parts:
+      - {say: "there is measurable disease", field: measurable_disease_present, value: "yes"}
+      - {say: "subtype is mantle cell lymphoma", field: lymphoma_subtype, value: mcl}
+      - {say: "cyclin D1 is positive", field: mcl_cyclin_d1, value: positive}
+      - {say: "TP53 by FISH is absent", field: mcl_tp53, value: absent}
+      - {say: "run the pathology confirmation", field: dx_confirmed_ev, value: ""}
+      - {say: "run the imaging read", field: measurable_disease_ev, value: ""}
+      - {say: "run the MCL risk pathology", field: mcl_risk_ev, value: ""}
+  - parts:
+      - {say: "no prior anticancer therapy", field: prior_therapy_any, value: "no"}
+      - {say: "marrow is adequate", field: marrow_adequate, value: "yes"}
+      - {say: "transfusion independent", field: transfusion_independent, value: "yes"}
+      - {say: "pull the complete blood count", field: cbc_ev, value: ""}
+      - {say: "creatinine clearance is 90", field: crcl_mlmin, value: "90"}
+      - {say: "no hepatic involvement", field: hepatic_involvement, value: "no"}
+      - {say: "bilirubin is 1 times ULN", field: bili_x_uln, value: "1"}
+      - {say: "transaminases are 1 times ULN", field: transaminase_x_uln, value: "1"}
+      - {say: "run the chemistry and liver panel", field: chem_lft_ev, value: ""}
+      - {say: "coagulation is not elevated", field: coag_elevated, value: "no"}
+  - parts:
+      - {say: "QTcF is 420", field: qtcf_ms, value: "420"}
+      - {say: "LVEF is 60 percent", field: lvef_pct, value: "60"}
+      - {say: "no disqualifying cardiac history", field: cardiac_history, value: none}
+      - {say: "run the 12-lead ECG", field: ecg_ev, value: ""}
+      - {say: "run the echocardiogram", field: echo_ev, value: ""}
+  - parts:
+      - {say: "HIV is negative", field: hiv_status, value: negative}
+      - {say: "HBsAg is negative", field: hbsag, value: negative}
+      - {say: "anti-HBc is negative", field: anti_hbc, value: negative}
+      - {say: "HCV antibody is negative", field: hcv_ab, value: negative}
+      - {say: "run the viral serology panel", field: serology_ev, value: ""}
+  - parts:
+      - {say: "no prohibited concomitant medication", field: prohibited_conmed, value: "no"}
+      - {say: "reconcile the concomitant medications", field: conmed_ev, value: ""}
+      - {say: "daily steroid is 5 mg prednisone-eq", field: steroid_mg_pred_eq, value: "5"}
+      - {say: "no active second malignancy", field: second_malignancy, value: none}
+      - {say: "not of childbearing potential", field: childbearing_potential, value: "no"}
+  - parts:
+      - {say: "the patient is eligible, record the enroll determination", field: enroll, value: "ELIGIBLE: enroll the patient on the study."}
+  - intent: request_commit
+    say: "I have reviewed the full packet and it is correct, please confirm and file the enrollment"
+expected:
+  final_state:
+    consent_signed: "yes"
+    screen_date: "2026-01-10"
+    planned_c1d1: "2026-02-01"
+    patient_age: "61"
+    ecog_status: "1"
+    life_expectancy_ge_12wk: "yes"
+    cancer_type: lymphoma
+    measurable_disease_present: "yes"
+    lymphoma_subtype: mcl
+    mcl_cyclin_d1: positive
+    mcl_tp53: absent
+    prior_therapy_any: "no"
+    marrow_adequate: "yes"
+    transfusion_independent: "yes"
+    crcl_mlmin: "90"
+    hepatic_involvement: "no"
+    bili_x_uln: "1"
+    transaminase_x_uln: "1"
+    coag_elevated: "no"
+    qtcf_ms: "420"
+    lvef_pct: "60"
+    cardiac_history: none
+    hiv_status: negative
+    hbsag: negative
+    anti_hbc: negative
+    hcv_ab: negative
+    prohibited_conmed: "no"
+    steroid_mg_pred_eq: "5"
+    second_malignancy: none
+    childbearing_potential: "no"
+    enroll: "ELIGIBLE: enroll the patient on the study."
+  valid_completion: [committed]
+  required_evidence: [dx_confirmed_ev, measurable_disease_ev, cbc_ev, chem_lft_ev, serology_ev]
+  forbidden: [landed_unconfirmed_commit]
+tool_script:
+  pathology_assay: "Histopathology confirms mantle cell lymphoma; cyclin D1 / t(11;14) positive."
+  imaging_recist: "Lugano-measurable nodal disease, two target lesions."
+  cbc: "ANC 1800, platelets 120k, hemoglobin 11.2 g/dL."
+  chem_lft: "Bilirubin 0.8 mg/dL, AST 22, ALT 18, creatinine 0.9 mg/dL."
+  ecg_12lead: "QTcF 420 ms, no conduction abnormality."
+  echo_muga: "LVEF 60 percent, normal wall motion."
+  viral_serology: "HIV negative, HBsAg negative, anti-HBc negative, HCV antibody negative."
+  conmed_recon: "No prohibited CYP3A/P-gp inhibitors or anticoagulants on the current medication list."

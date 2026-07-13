@@ -1,0 +1,19 @@
+id: w2-happy-error-spike
+workflow: incident_investigation
+category: happy_path
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "The billing-worker is throwing errors", field: affected_service, value: billing-worker}
+      - {say: "it's an error spike, the rate jumped 10x", field: symptom, value: error_spike}
+      - {say: "here is a sample: NullPointerException at InvoiceMapper.map line 88", field: error_sample, value: "NullPointerException at InvoiceMapper.map line 88"}
+  - intent: request_commit
+    say: "that's the sample, file the incident"
+expected:
+  final_state:
+    affected_service: billing-worker
+    symptom: error_spike
+    error_sample: "NullPointerException at InvoiceMapper.map line 88"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_premature_commit]

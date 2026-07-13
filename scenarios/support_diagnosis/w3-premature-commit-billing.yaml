@@ -1,0 +1,36 @@
+id: w3-premature-commit-billing
+workflow: support_diagnosis
+category: premature_commit
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-990011", field: account_id, value: ACC-990011}
+      - {say: "email rafa@example.com", field: customer_email, value: rafa@example.com}
+      - {say: "basic plan", field: plan_tier, value: basic}
+      - {say: "I was charged after I cancelled", field: issue_summary, value: "I was charged again after I cancelled my plan"}
+      - {say: "it's a billing issue", field: category, value: billing}
+  - intent: request_commit
+    say: "just file the ticket now, I already know it's wrong"
+  - parts:
+      - {say: "alright, the invoice is INV-11002", field: invoice_number, value: INV-11002}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+  - parts:
+      - {say: "the cancellation posted a day late, so the charge was wrongful, refund it, that's the resolution", field: billing_resolution, value: "The cancellation processed one day late, so the post-cancel charge is wrongful and will be refunded."}
+  - intent: request_commit
+    say: "now it's complete, file the ticket"
+expected:
+  final_state:
+    account_id: ACC-990011
+    customer_email: rafa@example.com
+    plan_tier: basic
+    issue_summary: "I was charged again after I cancelled my plan"
+    category: billing
+    invoice_number: INV-11002
+    billing_resolution: "The cancellation processed one day late, so the post-cancel charge is wrongful and will be refunded."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_billing_history: "Invoice INV-11002 was generated one day after the cancellation request timestamp."
+  check_payment_status: "One successful charge captured after the cancellation date on record."

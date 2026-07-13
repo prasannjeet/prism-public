@@ -1,0 +1,63 @@
+id: t5-correction-branch-switch-phish-to-ransom
+workflow: incident_response
+category: correction_branch_switch
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "an EDR alert came in", field: reporter_channel, value: edr_alert}
+      - {say: "a suspicious email plus odd file activity", field: alert_summary, value: "Suspicious email report alongside unusual file activity on a server"}
+      - {say: "validate it", field: triage_validation, value: ""}
+      - {say: "confirmed incident", field: alert_disposition, value: confirmed_incident}
+      - {say: "functional impact high", field: functional_impact, value: high}
+      - {say: "no info loss", field: information_impact, value: none}
+      - {say: "10 hosts", field: affected_host_count, value: "10"}
+      - {say: "severity critical", field: severity, value: critical}
+      - {say: "looks like phishing/BEC", field: incident_type, value: phishing_bec}
+      - {say: "server assets", field: asset_class, value: server}
+      - {say: "pull the headers", field: phish_header_pull, value: ""}
+      - {say: "yes the email is malicious", field: is_malicious_email, value: "yes"}
+      - {say: "compromised-sender spoof", field: spoof_class, value: compromised_sender}
+  - intent: correct
+    parts:
+      - {say: "actually this is ransomware, not phishing, the email was a side issue", field: incident_type, value: ransomware}
+      - {say: "encryption scope is full", field: encryption_scope, value: full}
+      - {say: "look up the variant", field: variant_ioc_lookup, value: ""}
+      - {say: "scan the spread", field: ransom_scope_scan, value: ""}
+      - {say: "restore from backup", field: recovery_path, value: restore_from_backup}
+      - {say: "file-integrity scan", field: data_impact_scan, value: ""}
+      - {say: "backup is within 7 days", field: backup_freshness, value: within_7d}
+      - {say: "verify the backup", field: backup_integrity_check, value: ""}
+  - parts:
+      - {say: "verified backup, restore", field: ransom_recovery_decision, value: "A verified within-7d backup is available and the spread is bounded; restore from backup."}
+      - {say: "isolate the hosts", field: containment_action, value: isolate_host}
+      - {say: "remediated", field: disposition, value: remediated}
+      - {say: "the report", field: incident_report, value: "Initially misclassified as phishing; reclassified to ransomware. Variant identified, spread scoped, and a verified within-7d backup restored after isolation."}
+  - intent: request_commit
+    say: "that's correct now, I confirm it, file it"
+expected:
+  final_state:
+    reporter_channel: edr_alert
+    alert_summary: "Suspicious email report alongside unusual file activity on a server"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "10"
+    severity: critical
+    incident_type: ransomware
+    asset_class: server
+    encryption_scope: full
+    recovery_path: restore_from_backup
+    backup_freshness: within_7d
+    ransom_recovery_decision: "A verified within-7d backup is available and the spread is bounded; restore from backup."
+    containment_action: isolate_host
+    disposition: remediated
+    incident_report: "Initially misclassified as phishing; reclassified to ransomware. Variant identified, spread scoped, and a verified within-7d backup restored after isolation."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, variant_ioc_lookup, ransom_scope_scan, data_impact_scan, backup_integrity_check]
+  forbidden: [inactive_branch_contamination]
+tool_script:
+  ioc_lookup: "Encryptor hash matches a tracked ransomware family; confirmed malicious."
+  edr_scan: "Encryption spread to a second host before isolation."
+  file_integrity: "File-integrity scan confirms encrypted volumes, no exfiltration indicators."
+  backup_check: "Most recent clean backup is 3 days old and restores cleanly."
+  mailbox_audit: "Email report was a separate low-severity item, unrelated to the encryption event."

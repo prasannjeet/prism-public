@@ -1,0 +1,34 @@
+id: w3-happy-connectivity
+workflow: support_diagnosis
+category: happy_path
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-200300", field: account_id, value: ACC-200300}
+      - {say: "email is omar@example.net", field: customer_email, value: omar@example.net}
+      - {say: "enterprise plan", field: plan_tier, value: enterprise}
+      - {say: "my home line keeps dropping every few minutes", field: issue_summary, value: "My home line keeps dropping every few minutes"}
+      - {say: "this is a connectivity issue", field: category, value: connectivity}
+  - parts:
+      - {say: "it started on the 10th of January", field: outage_started, value: "2026-01-10"}
+      - {say: "check the service status in my area", field: service_status, value: ""}
+      - {say: "and run a line test on my connection", field: line_test, value: ""}
+  - parts:
+      - {say: "so it's a degraded line in my area, that's the resolution", field: connectivity_resolution, value: "A degraded local line confirmed by the line test is causing the repeated drops; a field repair is scheduled."}
+  - intent: request_commit
+    say: "that's right, please file the ticket"
+expected:
+  final_state:
+    account_id: ACC-200300
+    customer_email: omar@example.net
+    plan_tier: enterprise
+    issue_summary: "My home line keeps dropping every few minutes"
+    category: connectivity
+    outage_started: "2026-01-10"
+    connectivity_resolution: "A degraded local line confirmed by the line test is causing the repeated drops; a field repair is scheduled."
+  valid_completion: [committed]
+  required_evidence: [service_status, line_test]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_service_status: "No regional outage, but the local segment reports intermittent signal loss since Jan 10."
+  run_line_test: "Line test shows high error rate and SNR margin below threshold on the subscriber loop."

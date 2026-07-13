@@ -1,0 +1,30 @@
+id: w1-premature-commit-moveout
+workflow: form_booking
+category: premature_commit
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "move-out clean", field: service_type, value: move_out}
+      - {say: "for Derek Lowe", field: customer_name, value: Derek Lowe}
+  - intent: request_commit
+    say: "just book it now, I'm in a hurry"
+  - parts:
+      - {say: "ok ok, email derek@example.com", field: customer_email, value: derek@example.com}
+      - {say: "the 14th of March", field: preferred_date, value: "2026-03-14"}
+      - {say: "evening", field: preferred_time, value: evening}
+      - {say: "5 rooms", field: num_rooms, value: "5"}
+      - {say: "no, the deposit is not protected", field: deposit_protection, value: "no"}
+  - intent: request_commit
+    say: "now that's everything, please book it"
+expected:
+  final_state:
+    service_type: move_out
+    customer_name: Derek Lowe
+    customer_email: derek@example.com
+    preferred_date: "2026-03-14"
+    preferred_time: evening
+    num_rooms: "5"
+    deposit_protection: "no"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_premature_commit]

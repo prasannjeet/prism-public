@@ -1,0 +1,97 @@
+id: t6-screenfail-disease-leukemia
+workflow: clinical_trial_eligibility
+category: out_of_order
+branch_field: cancer_type
+beats:
+  - parts:
+      - {say: "consent signed", field: consent_signed, value: "yes"}
+      - {say: "ECOG 1", field: ecog_status, value: "1"}
+      - {say: "it is a leukemia", field: cancer_type, value: leukemia}
+      - {say: "screening January 10th", field: screen_date, value: "2026-01-10"}
+      - {say: "C1D1 February 1st", field: planned_c1d1, value: "2026-02-01"}
+      - {say: "age 61", field: patient_age, value: "61"}
+      - {say: "life expectancy over 12 weeks", field: life_expectancy_ge_12wk, value: "yes"}
+  - parts:
+      - {say: "measurable marrow disease", field: measurable_disease_present, value: "yes"}
+      - {say: "lineage is AML", field: leukemia_lineage, value: aml}
+      - {say: "marrow blasts 25 percent", field: leuk_marrow_blasts, value: "25"}
+      - {say: "cytogenetic risk is favorable", field: leuk_cytogenetic_risk, value: favorable}
+      - {say: "run the pathology confirmation", field: dx_confirmed_ev, value: ""}
+      - {say: "run the imaging/marrow read", field: measurable_disease_ev, value: ""}
+  - parts:
+      - {say: "no prior therapy", field: prior_therapy_any, value: "no"}
+      - {say: "marrow adequate", field: marrow_adequate, value: "yes"}
+      - {say: "transfusion independent", field: transfusion_independent, value: "yes"}
+      - {say: "run CBC", field: cbc_ev, value: ""}
+      - {say: "CrCl 90", field: crcl_mlmin, value: "90"}
+      - {say: "no hepatic involvement", field: hepatic_involvement, value: "no"}
+      - {say: "bilirubin 1x", field: bili_x_uln, value: "1"}
+      - {say: "transaminases 1x", field: transaminase_x_uln, value: "1"}
+      - {say: "run chemistry and LFT", field: chem_lft_ev, value: ""}
+      - {say: "coag not elevated", field: coag_elevated, value: "no"}
+  - parts:
+      - {say: "QTcF 420", field: qtcf_ms, value: "420"}
+      - {say: "LVEF 60", field: lvef_pct, value: "60"}
+      - {say: "no cardiac history", field: cardiac_history, value: none}
+      - {say: "run ECG", field: ecg_ev, value: ""}
+      - {say: "run echo", field: echo_ev, value: ""}
+  - parts:
+      - {say: "HIV negative", field: hiv_status, value: negative}
+      # intentional: positive HBsAg fails the enroll gate so enroll deactivates, leaving a single screen-fail conclusion
+      - {say: "HBsAg positive", field: hbsag, value: positive}
+      - {say: "HCV antibody negative", field: hcv_ab, value: negative}
+      - {say: "run serology", field: serology_ev, value: ""}
+  - parts:
+      - {say: "no prohibited conmed", field: prohibited_conmed, value: "no"}
+      - {say: "reconcile conmeds", field: conmed_ev, value: ""}
+      - {say: "steroid 5 mg", field: steroid_mg_pred_eq, value: "5"}
+      - {say: "no second malignancy", field: second_malignancy, value: none}
+      - {say: "not of childbearing potential", field: childbearing_potential, value: "no"}
+  - parts:
+      - {say: "favorable-risk AML does not meet the target risk class, record the screen failure", field: screen_fail_disease_leukemia, value: "INELIGIBLE: favorable-risk AML does not meet the target lineage/risk."}
+  - intent: request_commit
+    say: "reviewed and correct, confirm and file the screen failure"
+expected:
+  final_state:
+    consent_signed: "yes"
+    screen_date: "2026-01-10"
+    planned_c1d1: "2026-02-01"
+    patient_age: "61"
+    ecog_status: "1"
+    life_expectancy_ge_12wk: "yes"
+    cancer_type: leukemia
+    measurable_disease_present: "yes"
+    leukemia_lineage: aml
+    leuk_marrow_blasts: "25"
+    leuk_cytogenetic_risk: favorable
+    prior_therapy_any: "no"
+    marrow_adequate: "yes"
+    transfusion_independent: "yes"
+    crcl_mlmin: "90"
+    hepatic_involvement: "no"
+    bili_x_uln: "1"
+    transaminase_x_uln: "1"
+    coag_elevated: "no"
+    qtcf_ms: "420"
+    lvef_pct: "60"
+    cardiac_history: none
+    hiv_status: negative
+    hbsag: positive
+    hcv_ab: negative
+    prohibited_conmed: "no"
+    steroid_mg_pred_eq: "5"
+    second_malignancy: none
+    childbearing_potential: "no"
+    screen_fail_disease_leukemia: "INELIGIBLE: favorable-risk AML does not meet the target lineage/risk."
+  valid_completion: [committed]
+  required_evidence: [dx_confirmed_ev]
+  forbidden: [inactive_branch_contamination, landed_conclusion_without_evidence]
+tool_script:
+  pathology_assay: "Flow/cytogenetics confirm AML with a favorable-risk karyotype."
+  imaging_recist: "Marrow-evaluable disease per protocol."
+  cbc: "ANC 1500, platelets 90k, hemoglobin 10.0 g/dL."
+  chem_lft: "Bilirubin 0.7, AST 20, ALT 16, creatinine 0.8."
+  ecg_12lead: "QTcF 420 ms."
+  echo_muga: "LVEF 60 percent."
+  viral_serology: "HIV negative, HBsAg positive, HCV antibody negative."
+  conmed_recon: "No prohibited agents present."

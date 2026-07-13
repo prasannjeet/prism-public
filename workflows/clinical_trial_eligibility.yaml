@@ -1,0 +1,832 @@
+# T6 — clinical_trial_eligibility (THE SHOWPIECE). A Phase-II oncology trial eligibility
+# screen: 91 fields, six branches nesting 4-5 levels (deepest chain 6 including the cancer_type
+# driver), an `enroll` conclusion behind a 7-leaf conjunctive `all_of` gated on exactly five
+# evidence packets, per-branch disease screen-fails, plus safety / rescreen / refer / escalate
+# dispositions (nine conclusions). Verified profile: enrolling an ineligible oncology patient is
+# an irreversible patient-safety/regulatory event, so the screener confirms before commit. Built
+# on the compound-condition engine extension (all_of / any_of / numeric leaf guards); no new node
+# kinds. Declaration order: shared funnel head -> cancer_type driver + per-type disease chains ->
+# prior-therapy cascade -> marrow/organ -> cardiac -> serology reflex -> conmed/reproductive ->
+# the nine conclusions last.
+workflow: clinical-trial-eligibility
+profile: verified
+
+fields:
+  # --- shared / always-active funnel head (spec rows 1-6) ---
+  - name: consent_signed
+    type: select
+    required: true
+    options: ["yes", "no"]
+    prompt: "Has the patient signed the ICF before any study-specific procedure?"
+
+  - name: screen_date
+    type: date
+    required: true
+    show_when: consent_signed = yes
+    validate: { not_future: true }
+    prompt: "Date of screening visit."
+
+  - name: planned_c1d1
+    type: date
+    required: true
+    show_when: consent_signed = yes
+    validate: { future_within_days: 90 }
+    prompt: "Planned Cycle 1 Day 1 date."
+
+  - name: patient_age
+    type: number
+    required: true
+    show_when: consent_signed = yes
+    validate: { range: { min: 0, max: 120 } }
+    prompt: "Patient age in years."
+
+  - name: ecog_status
+    type: number
+    required: true
+    show_when: consent_signed = yes
+    validate: { range: { min: 0, max: 5 } }
+    prompt: "ECOG performance status (0-5)."
+
+  - name: life_expectancy_ge_12wk
+    type: select
+    required: true
+    show_when: consent_signed = yes
+    options: ["yes", "no"]
+    prompt: "Is estimated life expectancy >= 12 weeks?"
+
+  # --- disease driver + per-type deep disease chains (spec rows 7-25, Branch A) ---
+  - name: cancer_type
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - consent_signed = yes
+        - { field: ecog_status, op: "<=", value: "2" }
+    options: [lymphoma, leukemia, solid_tumor]
+    prompt: "Primary cancer type."
+
+  - name: dx_confirmed_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [pathology_assay]
+
+  - name: measurable_disease_present
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Is there measurable/evaluable disease per protocol (RECIST 1.1 or Lugano/marrow)?"
+
+  - name: measurable_disease_ev
+    type: evidence
+    required: true
+    show_when: measurable_disease_present = yes
+    satisfied_by: [imaging_recist]
+
+  # lymphoma chain (cancer_type -> subtype -> marker -> tp53 -> cohort)
+  - name: lymphoma_subtype
+    type: select
+    required: true
+    show_when: cancer_type = lymphoma
+    options: [mcl, dlbcl, follicular, other]
+    prompt: "Lymphoma subtype."
+
+  - name: mcl_cyclin_d1
+    type: select
+    required: true
+    show_when: lymphoma_subtype = mcl
+    options: [positive, negative]
+    prompt: "Cyclin D1 / t(11;14) status."
+
+  - name: mcl_risk_ev
+    type: evidence
+    required: true
+    show_when: mcl_cyclin_d1 = positive
+    satisfied_by: [pathology_assay]
+
+  - name: mcl_tp53
+    type: select
+    required: true
+    show_when: mcl_cyclin_d1 = positive
+    options: [present, absent]
+    prompt: "TP53/del17p by FISH."
+
+  - name: mcl_high_risk_eligible
+    type: select
+    required: true
+    show_when: mcl_tp53 = present
+    options: ["yes", "no"]
+    prompt: "TP53-aberrant high-risk: enrichment cohort slot confirmed open?"
+
+  # leukemia chain (cancer_type -> lineage -> blasts/cytogenetics -> risk)
+  - name: leukemia_lineage
+    type: select
+    required: true
+    show_when: cancer_type = leukemia
+    options: [cll, aml, all, other]
+    prompt: "Leukemia lineage."
+
+  - name: leuk_marrow_blasts
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - leukemia_lineage = aml
+        - leukemia_lineage = all
+    validate: { range: { min: 0, max: 100 } }
+    prompt: "Marrow blast percentage."
+
+  - name: leuk_cytogenetic_risk
+    type: select
+    required: true
+    show_when: { field: leuk_marrow_blasts, op: ">=", value: "20" }
+    options: [favorable, intermediate, adverse]
+    prompt: "Cytogenetic/molecular risk class."
+
+  - name: leuk_adverse_cohort_open
+    type: select
+    required: true
+    show_when: leuk_cytogenetic_risk = adverse
+    options: ["yes", "no"]
+    prompt: "Adverse-risk cohort slot confirmed open?"
+
+  - name: cll_del17p
+    type: select
+    required: true
+    show_when: leukemia_lineage = cll
+    options: [present, absent]
+    prompt: "CLL del(17p)/TP53 status."
+
+  # solid-tumor chain (cancer_type -> histology/stage -> measurable -> prior-RT interplay)
+  - name: solid_histology
+    type: select
+    required: true
+    show_when: cancer_type = solid_tumor
+    options: [adeno, squamous, melanoma, other]
+    prompt: "Solid-tumor histology."
+
+  - name: solid_stage
+    type: select
+    required: true
+    show_when: cancer_type = solid_tumor
+    options: [i, ii, iii, iv]
+    prompt: "Disease stage."
+
+  - name: target_lesion_count
+    type: number
+    required: true
+    show_when: cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 5 } }
+    prompt: "Number of RECIST target lesions (<=5, <=2/organ)."
+
+  - name: solid_lesion_prior_rt
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - cancer_type = solid_tumor
+        - solid_stage = iv
+    options: ["yes", "no"]
+    prompt: "Is the sole target lesion in a previously-irradiated field?"
+
+  - name: solid_new_lesion_confirmed
+    type: select
+    required: true
+    show_when: solid_lesion_prior_rt = yes
+    options: ["yes", "no"]
+    prompt: "Documented progression / new non-irradiated measurable lesion?"
+
+  # --- prior therapy & washout cascade (spec rows 26-38, Branch B — deepest, depth 6) ---
+  - name: prior_therapy_any
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Any prior anticancer therapy?"
+
+  - name: prior_records_ev
+    type: evidence
+    required: true
+    show_when: prior_therapy_any = yes
+    satisfied_by: [prior_records]
+
+  - name: prior_class
+    type: select
+    required: true
+    show_when: prior_therapy_any = yes
+    options: [chemo, targeted, antibody, immunoconjugate, radiation, cellular, investigational, surgery]
+    prompt: "Most recent therapy class."
+
+  - name: last_dose_date
+    type: date
+    required: true
+    show_when: prior_therapy_any = yes
+    validate: { not_future: true }
+    prompt: "Date of last dose / procedure."
+
+  - name: targeted_half_life_days
+    type: number
+    required: true
+    show_when: prior_class = targeted
+    validate: { range: { min: 0, max: 60 } }
+    prompt: "Agent half-life (days): washout = 5 half-lives or 14d, whichever shorter."
+
+  - name: radiation_field
+    type: select
+    required: true
+    show_when: prior_class = radiation
+    options: [broad_marrow_or_wholebrain, limited_palliative]
+    prompt: "Radiation field."
+
+  - name: cns_directed_prior
+    type: select
+    required: true
+    show_when: prior_class = radiation
+    options: ["yes", "no"]
+    prompt: "Was prior radiation CNS-directed?"
+
+  - name: cns_stable_no_disease
+    type: select
+    required: true
+    show_when: cns_directed_prior = yes
+    options: ["yes", "no"]
+    prompt: "Neurologically stable AND no evidence of CNS disease?"
+
+  - name: cns_sponsor_approval
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - cns_directed_prior = yes
+        - cns_stable_no_disease = yes
+    options: ["yes", "no", pending]
+    prompt: "Documented sponsor approval for prior CNS therapy?"
+
+  - name: cellular_type
+    type: select
+    required: true
+    show_when: prior_class = cellular
+    options: [sct, car_t, other]
+    prompt: "Cellular therapy type."
+
+  - name: gvhd_active
+    type: select
+    required: true
+    show_when: cellular_type = sct
+    options: ["yes", "no"]
+    prompt: "Active graft-versus-host disease requiring immunosuppression?"
+
+  - name: washout_elapsed_by_c1d1
+    type: select
+    required: true
+    show_when: prior_therapy_any = yes
+    options: ["yes", "no"]
+    prompt: "Has the class-specific washout fully elapsed by C1D1?"
+
+  - name: residual_tox_grade
+    type: number
+    required: true
+    show_when: washout_elapsed_by_c1d1 = yes
+    validate: { range: { min: 0, max: 5 } }
+    prompt: "Highest residual prior-therapy AE grade (excl. alopecia, G2 neuropathy)."
+
+  # --- marrow & organ function cascade (spec rows 39-53, Branch C — depth 4) ---
+  - name: cbc_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [cbc]
+
+  - name: marrow_adequate
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Marrow adequate (plt>=50k, ANC>=1000, Hgb>=8)?"
+
+  - name: cytopenia_cause
+    type: select
+    required: true
+    show_when: marrow_adequate = no
+    options: [tumor_involvement_ge30, mds_hypoplastic, other]
+    prompt: "Cause of cytopenia."
+
+  - name: marrow_tumor_pct
+    type: number
+    required: true
+    show_when: cytopenia_cause = tumor_involvement_ge30
+    validate: { range: { min: 0, max: 100 } }
+    prompt: "Documented marrow tumor involvement (%)."
+
+  - name: marrow_pi_discussion
+    type: select
+    required: true
+    show_when: { field: marrow_tumor_pct, op: ">=", value: "30" }
+    options: ["yes", "no", pending]
+    prompt: "PI/Co-PI discussion documented to admit despite cytopenia?"
+
+  - name: transfusion_independent
+    type: select
+    required: true
+    show_when: marrow_adequate = yes
+    options: ["yes", "no"]
+    prompt: "Independent of transfusion (2wk Hgb) / G-CSF (7d)?"
+
+  - name: chem_lft_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [chem_lft]
+
+  - name: crcl_mlmin
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 200 } }
+    prompt: "Creatinine clearance (Cockcroft-Gault, mL/min)."
+
+  - name: hepatic_involvement
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Documented hepatic metastases / Gilbert's / immune hemolysis?"
+
+  - name: bili_x_uln
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 20 } }
+    prompt: "Total bilirubin (xULN). Limit 1.5x, or 3x if hepatic branch."
+
+  - name: transaminase_x_uln
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 20 } }
+    prompt: "AST/ALT (xULN). Limit 3x, or 5x if hepatic mets."
+
+  - name: coag_ev
+    type: evidence
+    required: false
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [coag_panel]
+
+  - name: coag_elevated
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "PT/INR or PTT >1.2xULN?"
+
+  - name: lupus_anticoagulant
+    type: select
+    required: true
+    show_when: coag_elevated = yes
+    options: ["yes", "no"]
+    prompt: "Elevation attributable to known lupus anticoagulant?"
+
+  - name: coag_sponsor_consult
+    type: select
+    required: true
+    show_when: lupus_anticoagulant = yes
+    options: ["yes", "no", pending]
+    prompt: "Sponsor consult documented?"
+
+  # --- cardiac cascade (spec rows 54-61, Branch D — depth 3) ---
+  - name: ecg_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [ecg_12lead]
+
+  - name: qtcf_ms
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 200, max: 700 } }
+    prompt: "Mean/representative QTcF (ms). Threshold 470."
+
+  - name: qtc_confirmed_2of3
+    type: select
+    required: true
+    show_when: { field: qtcf_ms, op: ">", value: "470" }
+    options: ["yes", "no"]
+    prompt: "QTc >470 confirmed on >=2 of 3 ECGs?"
+
+  - name: qtc_correctable
+    type: select
+    required: true
+    show_when: qtc_confirmed_2of3 = yes
+    options: ["yes", "no"]
+    prompt: "Correctable cause (drug-induced / BBB / paced, no syncope)?"
+
+  - name: echo_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [echo_muga]
+
+  - name: lvef_pct
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 90 } }
+    prompt: "LVEF % (threshold >=40)."
+
+  - name: cardiac_history
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: [none, recent_mi_acs, nyha3_hf, uncontrolled_arrhythmia]
+    prompt: "Disqualifying cardiac history?"
+
+  - name: cardiac_cleared
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cardiac_history = uncontrolled_arrhythmia
+        - cardiac_history = recent_mi_acs
+    options: ["yes", "no"]
+    prompt: "Cardiology clearance documented?"
+
+  # --- viral serology reflex cascade (spec rows 62-71, Branch E — depth 4) ---
+  - name: serology_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [viral_serology]
+
+  - name: hiv_status
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: [negative, positive]
+    prompt: "HIV serology."
+
+  - name: hiv_cd4
+    type: number
+    required: true
+    show_when: hiv_status = positive
+    validate: { range: { min: 0, max: 2000 } }
+    prompt: "CD4+ count (cells/uL). Threshold >=350."
+
+  - name: hiv_controlled
+    type: select
+    required: true
+    show_when: { field: hiv_cd4, op: ">=", value: "350" }
+    options: ["yes", "no"]
+    prompt: "On ART >=4wk, VL<400, no AIDS-defining OI in 12mo?"
+
+  - name: hbsag
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: [positive, negative]
+    prompt: "HBsAg."
+
+  - name: anti_hbc
+    type: select
+    required: true
+    show_when: hbsag = negative
+    options: [positive, negative]
+    prompt: "Anti-HBc."
+
+  - name: hbv_dna_detectable
+    type: select
+    required: true
+    show_when: anti_hbc = positive
+    options: ["yes", "no"]
+    prompt: "Reflex HBV DNA/PCR detectable above quantification?"
+
+  - name: hbv_prophylaxis
+    type: select
+    required: true
+    show_when: hbv_dna_detectable = no
+    options: ["yes", "no"]
+    prompt: "Antiviral prophylaxis plan documented for occult HBV?"
+
+  - name: hcv_ab
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: [positive, negative]
+    prompt: "HCV antibody."
+
+  - name: hcv_rna_detectable
+    type: select
+    required: true
+    show_when: hcv_ab = positive
+    options: ["yes", "no"]
+    prompt: "Reflex HCV RNA detectable?"
+
+  # --- concomitant meds, comorbidity, reproductive tail (spec rows 72-82, Branch F — depth 4) ---
+  - name: conmed_ev
+    type: evidence
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    satisfied_by: [conmed_recon]
+
+  - name: prohibited_conmed
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Prohibited drug present (strong CYP3A/P-gp inhibitor/inducer, VKA, dietary grapefruit/Seville/starfruit <3d)?"
+
+  - name: conmed_switchable
+    type: select
+    required: true
+    show_when: prohibited_conmed = yes
+    options: ["yes", "no"]
+    prompt: "Can the prohibited agent be safely discontinued/switched before C1D1?"
+
+  - name: conmed_switch_confirmed
+    type: select
+    required: true
+    show_when: conmed_switchable = yes
+    options: ["yes", "no"]
+    prompt: "Switch/discontinuation order signed and effective before C1D1?"
+
+  - name: steroid_mg_pred_eq
+    type: number
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    validate: { range: { min: 0, max: 200 } }
+    prompt: "Daily corticosteroid (mg prednisone-eq). Ceiling 20."
+
+  - name: second_malignancy
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: [none, allowlisted, other_active]
+    prompt: "Active second/concurrent malignancy?"
+
+  - name: second_mal_dz_free_1yr
+    type: select
+    required: true
+    show_when: second_malignancy = other_active
+    options: ["yes", "no"]
+    prompt: "Disease-free <1yr with life-expectancy override documented?"
+
+  - name: childbearing_potential
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - cancer_type = lymphoma
+        - cancer_type = leukemia
+        - cancer_type = solid_tumor
+    options: ["yes", "no"]
+    prompt: "Of childbearing potential?"
+
+  - name: pregnancy_ev
+    type: evidence
+    required: true
+    show_when: childbearing_potential = yes
+    satisfied_by: [pregnancy_test]
+
+  - name: pregnancy_negative
+    type: select
+    required: true
+    show_when: childbearing_potential = yes
+    options: ["yes", "no"]
+    prompt: "Pregnancy test negative?"
+
+  - name: contraception_method
+    type: select
+    required: true
+    show_when: pregnancy_negative = yes
+    options: [acceptable, unacceptable]
+    prompt: "Highly-effective contraception committed for 6mo post-dose?"
+
+  # --- conclusions (spec rows 83-91, declared last) ---
+  - name: enroll
+    type: conclusion
+    required: true
+    show_when:
+      all_of:
+        - measurable_disease_present = yes
+        - marrow_adequate = yes
+        - hiv_status = negative
+        - hbsag = negative
+        - hcv_ab = negative
+        - cardiac_history = none
+        - prohibited_conmed = no
+    requires_evidence: [dx_confirmed_ev, measurable_disease_ev, cbc_ev, chem_lft_ev, serology_ev]
+    prompt: "ELIGIBLE: enroll."
+
+  - name: screen_fail_disease_lymphoma
+    type: conclusion
+    required: true
+    show_when:
+      any_of:
+        - mcl_cyclin_d1 = negative
+        - lymphoma_subtype = dlbcl
+        - lymphoma_subtype = follicular
+        - lymphoma_subtype = other
+    requires_evidence: [dx_confirmed_ev]
+    prompt: "INELIGIBLE: lymphoma not the target (MCL/cyclin-D1+) disease."
+
+  - name: screen_fail_disease_leukemia
+    type: conclusion
+    required: true
+    show_when:
+      any_of:
+        - leukemia_lineage = other
+        - leuk_cytogenetic_risk = favorable
+        - cll_del17p = absent
+    requires_evidence: [dx_confirmed_ev]
+    prompt: "INELIGIBLE: leukemia does not meet target lineage/risk."
+
+  - name: screen_fail_disease_solid
+    type: conclusion
+    required: true
+    show_when:
+      any_of:
+        - { field: target_lesion_count, op: "<", value: "1" }
+        - solid_new_lesion_confirmed = no
+    requires_evidence: [dx_confirmed_ev]
+    prompt: "INELIGIBLE: no eligible measurable solid-tumor lesion."
+
+  - name: screen_fail_no_measurable
+    type: conclusion
+    required: true
+    show_when: measurable_disease_present = no
+    requires_evidence: [dx_confirmed_ev]
+    prompt: "INELIGIBLE: no measurable/evaluable disease."
+
+  - name: screen_fail_safety
+    type: conclusion
+    required: true
+    show_when:
+      any_of:
+        - cytopenia_cause = mds_hypoplastic
+        - qtc_confirmed_2of3 = yes
+        - hbv_dna_detectable = yes
+        - hcv_rna_detectable = yes
+        - cardiac_history = recent_mi_acs
+        - cardiac_history = nyha3_hf
+        - gvhd_active = yes
+    requires_evidence: [cbc_ev, serology_ev, ecg_ev, echo_ev]
+    prompt: "SCREEN FAILURE: disqualifying safety criterion."
+
+  - name: rescreen
+    type: conclusion
+    required: false
+    show_when:
+      any_of:
+        - washout_elapsed_by_c1d1 = no
+        - qtc_correctable = yes
+        - conmed_switchable = yes
+    requires_evidence: [ecg_ev, conmed_ev]
+    prompt: "RESCREEN: transient/correctable; defer and re-test."
+
+  - name: refer_waiver
+    type: conclusion
+    required: false
+    show_when:
+      any_of:
+        - marrow_pi_discussion = pending
+        - cns_sponsor_approval = pending
+        - coag_sponsor_consult = pending
+        - marrow_pi_discussion = yes
+        - cns_sponsor_approval = yes
+    requires_evidence: [cbc_ev]
+    prompt: "REFER FOR REVIEW: PI/sponsor waiver path."
+
+  - name: escalate_cohort_slot
+    type: conclusion
+    required: false
+    show_when:
+      any_of:
+        - mcl_high_risk_eligible = no
+        - leuk_adverse_cohort_open = no
+    requires_evidence: [dx_confirmed_ev]
+    prompt: "ESCALATE: high-risk enrichment cohort slot closed; refer to sponsor for slot allocation."
+
+tools:
+  - name: pathology_assay
+    description: "Histopathologic/hematopathologic confirmation: marker panel, FISH, Ki-67, histology."
+  - name: imaging_recist
+    description: "RECIST 1.1 / Lugano measurable-lesion imaging read."
+  - name: cbc
+    description: "Complete blood count: ANC, platelets, hemoglobin."
+  - name: chem_lft
+    description: "Chemistry / liver function: bilirubin, AST, ALT, creatinine."
+  - name: coag_panel
+    description: "Coagulation panel: PT/INR, PTT."
+  - name: ecg_12lead
+    description: "12-lead ECG with Fridericia-corrected QTc (up to 3 reads)."
+  - name: echo_muga
+    description: "Echocardiogram / MUGA for left-ventricular ejection fraction."
+  - name: viral_serology
+    description: "HIV/HBV/HCV serology panel plus reflex CD4, HBV DNA, and HCV RNA assays."
+  - name: pregnancy_test
+    description: "Serum/urine beta-hCG pregnancy test within 7 days."
+  - name: prior_records
+    description: "Prior-therapy records pull: classes, last-dose dates, prior AE grades."
+  - name: conmed_recon
+    description: "Concomitant-medication reconciliation."

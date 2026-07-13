@@ -1,0 +1,37 @@
+id: t4-out-of-order-cancellation-death
+workflow: travel_insurance_claim
+category: out_of_order
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "this is a cancellation claim", field: claim_type, value: cancellation}
+      - {say: "the cause was a medical reason", field: cancellation_cause, value: medical_reason}
+      - {say: "sadly the outcome was a death", field: medical_outcome, value: death}
+  - parts:
+      - {say: "my policy number is POL-300400", field: policy_number, value: POL-300400}
+      - {say: "it was purchased on 2025-09-20", field: policy_purchase_date, value: "2025-09-20"}
+      - {say: "contact me at priya@example.com", field: claimant_email, value: priya@example.com}
+      - {say: "the claimed amount is 6000", field: claimed_amount, value: "6000"}
+  - parts:
+      - {say: "here is the proof of payment for the trip", field: proof_of_payment, value: ""}
+      - {say: "and the death certificate", field: death_certificate, value: ""}
+  - parts:
+      - {say: "the death is covered under the cancellation benefit, approve it", field: cancellation_adjudication, value: "The trip cancellation due to the insured death is covered; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-300400
+    policy_purchase_date: "2025-09-20"
+    claimant_email: priya@example.com
+    claim_type: cancellation
+    claimed_amount: "6000"
+    cancellation_cause: medical_reason
+    medical_outcome: death
+    cancellation_adjudication: "The trip cancellation due to the insured death is covered; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [proof_of_payment]
+  forbidden: []
+tool_script:
+  upload_proof_of_payment: "Receipt shows full prepayment of the cancelled itinerary."
+  upload_death_certificate: "Certified death certificate naming the insured traveler."

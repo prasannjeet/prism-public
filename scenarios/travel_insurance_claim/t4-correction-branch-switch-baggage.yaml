@@ -1,0 +1,41 @@
+id: t4-correction-branch-switch-baggage
+workflow: travel_insurance_claim
+category: correction_branch_switch
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-400500", field: policy_number, value: POL-400500}
+      - {say: "purchased 2025-08-10", field: policy_purchase_date, value: "2025-08-10"}
+      - {say: "email tess@example.com", field: claimant_email, value: tess@example.com}
+      - {say: "this is a baggage claim", field: claim_type, value: baggage}
+      - {say: "amount is 900", field: claimed_amount, value: "900"}
+      - {say: "here is proof I own the items", field: baggage_proof_of_ownership, value: ""}
+      - {say: "the bag was damaged", field: baggage_subtype, value: damaged}
+      - {say: "the damage is repairable", field: damage_severity, value: repairable}
+      - {say: "here is the repair estimate", field: repair_estimate, value: ""}
+  - intent: correct
+    parts:
+      - {say: "actually the bag wasn't damaged, it was stolen", field: baggage_subtype, value: stolen}
+      - {say: "yes a police report was filed", field: police_report_filed, value: "yes"}
+      - {say: "here is the police report", field: police_report, value: ""}
+  - parts:
+      - {say: "the theft is covered, approve the claim", field: baggage_adjudication, value: "The theft is documented by a filed police report and is covered; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct now, file the decision"
+expected:
+  final_state:
+    policy_number: POL-400500
+    policy_purchase_date: "2025-08-10"
+    claimant_email: tess@example.com
+    claim_type: baggage
+    claimed_amount: "900"
+    baggage_subtype: stolen
+    police_report_filed: "yes"
+    baggage_adjudication: "The theft is documented by a filed police report and is covered; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [baggage_proof_of_ownership]
+  forbidden: [inactive_branch_contamination]
+tool_script:
+  upload_ownership_proof: "Original purchase receipts establish ownership of the claimed items."
+  upload_repair_estimate: "Repair shop estimate for the previously claimed damage."
+  upload_police_report: "Filed police report documenting the theft of the baggage."

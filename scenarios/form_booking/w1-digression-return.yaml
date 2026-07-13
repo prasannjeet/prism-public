@@ -1,0 +1,30 @@
+id: w1-digression-return
+workflow: form_booking
+category: digression_return
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "windows clean please", field: service_type, value: windows}
+      - {say: "for Greta Olsen", field: customer_name, value: Greta Olsen}
+      - {say: "email greta@example.com", field: customer_email, value: greta@example.com}
+  - intent: digress
+    say: "by the way, do you also do gutter cleaning? just curious"
+  - parts:
+      - {say: "anyway, back to it, the 22nd of March", field: preferred_date, value: "2026-03-22"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "there are 20 windows", field: num_windows, value: "20"}
+      - {say: "1 floor above ground", field: floors_above_ground, value: "1"}
+  - intent: request_commit
+    say: "that's all, please book it"
+expected:
+  final_state:
+    service_type: windows
+    customer_name: Greta Olsen
+    customer_email: greta@example.com
+    preferred_date: "2026-03-22"
+    preferred_time: morning
+    num_windows: "20"
+    floors_above_ground: "1"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: []

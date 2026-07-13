@@ -1,0 +1,28 @@
+id: w1-happy-windows
+workflow: form_booking
+category: happy_path
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "I want my windows cleaned", field: service_type, value: windows}
+      - {say: "it's for Priya Nair", field: customer_name, value: Priya Nair}
+      - {say: "my email is priya@inbox.com", field: customer_email, value: priya@inbox.com}
+  - parts:
+      - {say: "let's do the 20th of March", field: preferred_date, value: "2026-03-20"}
+      - {say: "evening please", field: preferred_time, value: evening}
+      - {say: "there are 14 windows", field: num_windows, value: "14"}
+      - {say: "it's a two-storey house, so 2 floors above ground", field: floors_above_ground, value: "2"}
+  - intent: request_commit
+    say: "perfect, please confirm the booking"
+expected:
+  final_state:
+    service_type: windows
+    customer_name: Priya Nair
+    customer_email: priya@inbox.com
+    preferred_date: "2026-03-20"
+    preferred_time: evening
+    num_windows: "14"
+    floors_above_ground: "2"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_premature_commit]

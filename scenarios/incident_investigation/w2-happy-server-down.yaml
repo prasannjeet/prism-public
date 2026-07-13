@@ -1,0 +1,28 @@
+id: w2-happy-server-down
+workflow: incident_investigation
+category: happy_path
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "The checkout-api is down", field: affected_service, value: checkout-api}
+      - {say: "the whole server is down, nothing responds", field: symptom, value: server_down}
+      - {say: "it started at 4pm today", field: outage_time, value: "2026-01-15T16:00:00"}
+  - parts:
+      - {say: "please pull the recent deployments", field: deploy_check, value: ""}
+      - {say: "and check the error logs too", field: log_check, value: ""}
+  - parts:
+      - {say: "looks like the 15:55 deploy broke the health check, that's the root cause", field: server_root_cause, value: "The 15:55 deployment introduced a failing health check, taking the server offline."}
+  - intent: request_commit
+    say: "that's the conclusion, file it"
+expected:
+  final_state:
+    affected_service: checkout-api
+    symptom: server_down
+    outage_time: "2026-01-15T16:00:00"
+    server_root_cause: "The 15:55 deployment introduced a failing health check, taking the server offline."
+  valid_completion: [committed]
+  required_evidence: [deploy_check, log_check]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_deployments: "Recent deployments: 15:55 deploy of checkout-api (commit a1b2c3) changed the readiness probe."
+  check_logs: "Logs show readiness probe failing with 503 starting 15:56, restart loop thereafter."

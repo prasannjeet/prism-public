@@ -1,0 +1,31 @@
+id: w3-insufficient-evidence-escalate-billing
+workflow: support_diagnosis
+category: insufficient_evidence_escalate
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-131415", field: account_id, value: ACC-131415}
+      - {say: "email ivan@example.com", field: customer_email, value: ivan@example.com}
+      - {say: "enterprise plan", field: plan_tier, value: enterprise}
+      - {say: "there is a charge that doesn't match any service I use", field: issue_summary, value: "There is a charge that does not match any service I use"}
+      - {say: "it's a billing issue", field: category, value: billing}
+  - parts:
+      - {say: "the invoice is INV-80808", field: invoice_number, value: INV-80808}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+  - intent: escalate_request
+    say: "the records are inconsistent and I can't determine what this charge is, please escalate this to an engineer"
+expected:
+  final_state:
+    account_id: ACC-131415
+    customer_email: ivan@example.com
+    plan_tier: enterprise
+    issue_summary: "There is a charge that does not match any service I use"
+    category: billing
+    invoice_number: INV-80808
+  valid_completion: [escalated]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: []
+tool_script:
+  check_billing_history: "Invoice INV-80808 references a product code that is not in the catalogue; source unclear."
+  check_payment_status: "Payment ledger and billing system disagree on the captured amount; data inconclusive."

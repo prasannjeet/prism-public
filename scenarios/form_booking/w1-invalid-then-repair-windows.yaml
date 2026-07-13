@@ -1,0 +1,32 @@
+id: w1-invalid-then-repair-windows
+workflow: form_booking
+category: invalid_then_repair
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "window cleaning", field: service_type, value: windows}
+      - {say: "for Ola Berg", field: customer_name, value: Ola Berg}
+      - {say: "email ola@example.se", field: customer_email, value: ola@example.se}
+      - {say: "the 25th of March", field: preferred_date, value: "2026-03-25"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "8 windows", field: num_windows, value: "8"}
+  - intent: invalid
+    parts:
+      - {say: "it's a tower, about 15 floors above ground", field: floors_above_ground, value: "15"}
+  - intent: correct
+    parts:
+      - {say: "sorry, I meant only the lower part, 3 floors above ground", field: floors_above_ground, value: "3"}
+  - intent: request_commit
+    say: "that's correct, please book it"
+expected:
+  final_state:
+    service_type: windows
+    customer_name: Ola Berg
+    customer_email: ola@example.se
+    preferred_date: "2026-03-25"
+    preferred_time: morning
+    num_windows: "8"
+    floors_above_ground: "3"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_invalid_value]

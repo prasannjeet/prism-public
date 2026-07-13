@@ -1,0 +1,34 @@
+id: w3-verified-confirm-billing
+workflow: support_diagnosis
+category: verified_confirm_commit
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-151617", field: account_id, value: ACC-151617}
+      - {say: "email gabe@example.com", field: customer_email, value: gabe@example.com}
+      - {say: "basic plan", field: plan_tier, value: basic}
+      - {say: "I think a discount I was promised wasn't applied", field: issue_summary, value: "I think a discount I was promised was not applied"}
+      - {say: "it's a billing issue", field: category, value: billing}
+  - parts:
+      - {say: "the invoice is INV-72727", field: invoice_number, value: INV-72727}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+  - parts:
+      - {say: "the discount was missed, so a credit is due, that's the resolution", field: billing_resolution, value: "The promised discount was not applied to INV-72727; a one-time credit will be issued for the difference."}
+  - intent: request_commit
+    say: "yes, I have read the resolution and ticket back and it's all correct, please confirm and file it"
+expected:
+  final_state:
+    account_id: ACC-151617
+    customer_email: gabe@example.com
+    plan_tier: basic
+    issue_summary: "I think a discount I was promised was not applied"
+    category: billing
+    invoice_number: INV-72727
+    billing_resolution: "The promised discount was not applied to INV-72727; a one-time credit will be issued for the difference."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: [landed_unconfirmed_commit]
+tool_script:
+  check_billing_history: "Invoice INV-72727 charges the full rate with no discount line present."
+  check_payment_status: "Payment captured at the undiscounted amount; no adjustment recorded."

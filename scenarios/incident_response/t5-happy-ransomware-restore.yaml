@@ -1,0 +1,59 @@
+id: t5-happy-ransomware-restore
+workflow: incident_response
+category: verified_confirm_commit
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "an EDR alert fired on a file-encryption burst", field: reporter_channel, value: edr_alert}
+      - {say: "rapid mass file encryption across a file server", field: alert_summary, value: "Rapid mass file encryption observed on a primary file server"}
+      - {say: "look up the variant indicators to validate", field: triage_validation, value: ""}
+      - {say: "it's a confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact is high", field: functional_impact, value: high}
+      - {say: "no confirmed information loss", field: information_impact, value: none}
+      - {say: "12 hosts affected", field: affected_host_count, value: "12"}
+      - {say: "severity critical", field: severity, value: critical}
+      - {say: "it's ransomware", field: incident_type, value: ransomware}
+      - {say: "the affected assets are servers", field: asset_class, value: server}
+  - parts:
+      - {say: "run the variant IOC lookup", field: variant_ioc_lookup, value: ""}
+      - {say: "encryption scope is full", field: encryption_scope, value: full}
+      - {say: "scan the ransom spread", field: ransom_scope_scan, value: ""}
+      - {say: "we will restore from backup", field: recovery_path, value: restore_from_backup}
+      - {say: "run the file-integrity impact scan", field: data_impact_scan, value: ""}
+      - {say: "the most recent clean backup is within 24 hours", field: backup_freshness, value: within_24h}
+      - {say: "verify the backup integrity", field: backup_integrity_check, value: ""}
+  - parts:
+      - {say: "the clean backup is verified, restore rather than pay", field: ransom_recovery_decision, value: "A clean within-24h backup is verified and the encryption scope is bounded; restore from backup rather than negotiate or pay."}
+  - parts:
+      - {say: "we isolated the affected hosts", field: containment_action, value: isolate_host}
+      - {say: "disposition is remediated", field: disposition, value: remediated}
+      - {say: "here is the writeup", field: incident_report, value: "Ransomware encrypted a file server; variant identified, spread scoped, a verified within-24h backup restored after isolating the hosts; no ransom paid."}
+  - intent: request_commit
+    say: "I have reviewed the summary and confirm it, please file the decision"
+expected:
+  final_state:
+    reporter_channel: edr_alert
+    alert_summary: "Rapid mass file encryption observed on a primary file server"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "12"
+    severity: critical
+    incident_type: ransomware
+    asset_class: server
+    encryption_scope: full
+    recovery_path: restore_from_backup
+    backup_freshness: within_24h
+    ransom_recovery_decision: "A clean within-24h backup is verified and the encryption scope is bounded; restore from backup rather than negotiate or pay."
+    containment_action: isolate_host
+    disposition: remediated
+    incident_report: "Ransomware encrypted a file server; variant identified, spread scoped, a verified within-24h backup restored after isolating the hosts; no ransom paid."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, variant_ioc_lookup, ransom_scope_scan, data_impact_scan, backup_integrity_check]
+  forbidden: [landed_unconfirmed_commit]
+tool_script:
+  ioc_lookup: "Sample hash matches a known ransomware family; confirmed malicious."
+  edr_scan: "Encryption process spread from one host to two file shares before isolation."
+  file_integrity: "File-integrity scan shows encrypted documents on the server volume, no exfiltration markers."
+  backup_check: "Last clean backup is 6 hours old and restores cleanly in a test mount."

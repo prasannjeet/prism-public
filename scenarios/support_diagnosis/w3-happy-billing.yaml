@@ -1,0 +1,34 @@
+id: w3-happy-billing
+workflow: support_diagnosis
+category: happy_path
+branch_field: category
+beats:
+  - parts:
+      - {say: "my account is ACC-100200", field: account_id, value: ACC-100200}
+      - {say: "the email on file is dana@example.com", field: customer_email, value: dana@example.com}
+      - {say: "I'm on the pro plan", field: plan_tier, value: pro}
+      - {say: "I was charged twice for the same invoice this month", field: issue_summary, value: "I was charged twice for the same invoice this month"}
+      - {say: "it's a billing problem", field: category, value: billing}
+  - parts:
+      - {say: "the invoice is INV-77421", field: invoice_number, value: INV-77421}
+      - {say: "please pull my billing history", field: billing_lookup, value: ""}
+      - {say: "and check the payment status", field: payment_check, value: ""}
+  - parts:
+      - {say: "so the second charge was a duplicate auto-pay attempt, that's the resolution", field: billing_resolution, value: "The duplicate charge was a repeated auto-pay attempt and will be refunded to the original card."}
+  - intent: request_commit
+    say: "that's correct, please file the ticket"
+expected:
+  final_state:
+    account_id: ACC-100200
+    customer_email: dana@example.com
+    plan_tier: pro
+    issue_summary: "I was charged twice for the same invoice this month"
+    category: billing
+    invoice_number: INV-77421
+    billing_resolution: "The duplicate charge was a repeated auto-pay attempt and will be refunded to the original card."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_billing_history: "Invoice INV-77421 shows two identical charges of 49.00 on the same day."
+  check_payment_status: "Auto-pay retried after a transient gateway timeout, producing a second successful capture."

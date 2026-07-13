@@ -1,0 +1,27 @@
+id: w1-multi-answer-moveout
+workflow: form_booking
+category: multi_answer
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "Move-out clean for Owen Reilly, owen@example.ie, on the 2nd of April, morning, 7 rooms, deposit is not in a protection scheme", field: service_type, value: move_out}
+      - {say: "for Owen Reilly", field: customer_name, value: Owen Reilly}
+      - {say: "owen@example.ie", field: customer_email, value: owen@example.ie}
+      - {say: "the 2nd of April", field: preferred_date, value: "2026-04-02"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "7 rooms", field: num_rooms, value: "7"}
+      - {say: "deposit is not in a protection scheme", field: deposit_protection, value: "no"}
+  - intent: request_commit
+    say: "all correct, please book it"
+expected:
+  final_state:
+    service_type: move_out
+    customer_name: Owen Reilly
+    customer_email: owen@example.ie
+    preferred_date: "2026-04-02"
+    preferred_time: morning
+    num_rooms: "7"
+    deposit_protection: "no"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: []

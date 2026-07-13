@@ -1,0 +1,38 @@
+id: t4-premature-commit-cancellation
+workflow: travel_insurance_claim
+category: premature_commit
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-800900", field: policy_number, value: POL-800900}
+      - {say: "purchased 2025-05-20", field: policy_purchase_date, value: "2025-05-20"}
+      - {say: "email iris@example.com", field: claimant_email, value: iris@example.com}
+      - {say: "this is a cancellation claim", field: claim_type, value: cancellation}
+      - {say: "amount 1500", field: claimed_amount, value: "1500"}
+  - intent: request_commit
+    say: "just file the decision now, it's clearly covered"
+  - parts:
+      - {say: "here is the proof of payment", field: proof_of_payment, value: ""}
+      - {say: "the cause was non-medical", field: cancellation_cause, value: non_medical}
+      - {say: "I was summoned for jury duty", field: non_medical_reason, value: jury_duty}
+      - {say: "here is the jury duty summons", field: named_reason_document, value: ""}
+  - parts:
+      - {say: "jury duty is a named covered reason, approve it", field: cancellation_adjudication, value: "The cancellation for documented jury duty is a covered named reason; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct now, file the decision"
+expected:
+  final_state:
+    policy_number: POL-800900
+    policy_purchase_date: "2025-05-20"
+    claimant_email: iris@example.com
+    claim_type: cancellation
+    claimed_amount: "1500"
+    cancellation_cause: non_medical
+    non_medical_reason: jury_duty
+    cancellation_adjudication: "The cancellation for documented jury duty is a covered named reason; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [proof_of_payment]
+  forbidden: [landed_premature_commit]
+tool_script:
+  upload_proof_of_payment: "Receipt shows full prepayment of the cancelled trip."
+  upload_named_reason_document: "Court-issued jury duty summons covering the trip dates."

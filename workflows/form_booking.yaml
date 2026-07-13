@@ -1,0 +1,99 @@
+# W1 — home cleaning-service booking. The form special case: every node is an answer-field,
+# branching by service_type. Verified profile: the agent confirms before commit.
+workflow: form-booking
+profile: verified
+
+fields:
+  # --- shared (always active) ---
+  - name: service_type
+    type: select
+    required: true
+    options: [move_out, deep_clean, windows]
+    prompt: "What kind of cleaning do you need?"
+
+  - name: customer_name
+    type: text
+    required: true
+    prompt: "What name should the booking be under?"
+
+  - name: customer_email
+    type: email
+    required: true
+    validate: { pattern: email }
+    prompt: "Which email should we send the confirmation to?"
+
+  - name: preferred_date
+    type: date
+    required: true
+    validate: { future_within_days: 90 }
+    prompt: "What date would you like? (within the next 90 days)"
+
+  - name: preferred_time
+    type: select
+    required: true
+    options: [morning, afternoon, evening]
+    prompt: "Which part of the day suits you?"
+
+  - name: access_notes
+    type: text
+    required: false
+    prompt: "Any access instructions? (optional)"
+
+  # --- branch: move_out ---
+  - name: num_rooms
+    type: number
+    required: true
+    show_when: service_type = move_out
+    validate: { range: { min: 1, max: 12 } }
+    prompt: "How many rooms need cleaning?"
+
+  - name: deposit_protection
+    type: select
+    required: true
+    show_when: service_type = move_out
+    options: ["yes", "no"]
+    prompt: "Is the deposit held in a protection scheme?"
+
+  - name: landlord_email
+    type: email
+    required: true
+    show_when: deposit_protection = yes
+    validate: { pattern: email }
+    prompt: "What is the landlord's email for the deposit report?"
+
+  # --- branch: deep_clean ---
+  - name: home_size_sqm
+    type: number
+    required: true
+    show_when: service_type = deep_clean
+    validate: { range: { min: 10, max: 500 } }
+    prompt: "Roughly how many square metres is the home?"
+
+  - name: appliances_inside
+    type: select
+    required: true
+    show_when: service_type = deep_clean
+    options: ["yes", "no"]
+    prompt: "Should we clean inside the appliances (oven, fridge)?"
+
+  - name: pet_on_site
+    type: select
+    required: false
+    show_when: service_type = deep_clean
+    options: ["yes", "no"]
+    prompt: "Any pets on site we should know about? (optional)"
+
+  # --- branch: windows ---
+  - name: num_windows
+    type: number
+    required: true
+    show_when: service_type = windows
+    validate: { range: { min: 1, max: 60 } }
+    prompt: "How many windows need cleaning?"
+
+  - name: floors_above_ground
+    type: number
+    required: true
+    show_when: service_type = windows
+    validate: { range: { min: 0, max: 10 } }
+    prompt: "How many floors above ground level?"

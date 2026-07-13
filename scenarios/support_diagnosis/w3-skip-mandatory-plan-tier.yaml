@@ -1,0 +1,37 @@
+id: w3-skip-mandatory-plan-tier
+workflow: support_diagnosis
+category: skip_mandatory_attempt
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-778899", field: account_id, value: ACC-778899}
+      - {say: "email sam@example.com", field: customer_email, value: sam@example.com}
+  - intent: skip
+    say: "I'd rather not say which plan I'm on, can we just skip that part?"
+  - parts:
+      - {say: "fine, I'm on the basic plan", field: plan_tier, value: basic}
+      - {say: "I was double billed this cycle", field: issue_summary, value: "I appear to have been double billed this cycle"}
+      - {say: "it's a billing issue", field: category, value: billing}
+  - parts:
+      - {say: "invoice INV-33221", field: invoice_number, value: INV-33221}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+  - parts:
+      - {say: "it was a duplicate charge, refund it, that's the resolution", field: billing_resolution, value: "A duplicate charge on INV-33221 will be refunded; the original payment is retained."}
+  - intent: request_commit
+    say: "that's everything, file the ticket"
+expected:
+  final_state:
+    account_id: ACC-778899
+    customer_email: sam@example.com
+    plan_tier: basic
+    issue_summary: "I appear to have been double billed this cycle"
+    category: billing
+    invoice_number: INV-33221
+    billing_resolution: "A duplicate charge on INV-33221 will be refunded; the original payment is retained."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: []
+tool_script:
+  check_billing_history: "Invoice INV-33221 shows two identical charges within the same hour."
+  check_payment_status: "Two successful captures recorded; the second is a duplicate of the first."

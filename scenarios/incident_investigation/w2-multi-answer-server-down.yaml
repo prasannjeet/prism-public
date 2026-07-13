@@ -1,0 +1,26 @@
+id: w2-multi-answer-server-down
+workflow: incident_investigation
+category: multi_answer
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "auth-gateway is fully down since 13:30 today, server_down, please run the deploy check and log check and then the root cause is the bad config rollout", field: affected_service, value: auth-gateway}
+      - {say: "it's server_down", field: symptom, value: server_down}
+      - {say: "started 13:30 today", field: outage_time, value: "2026-01-15T13:30:00"}
+      - {say: "run the deployment check", field: deploy_check, value: ""}
+      - {say: "run the log check", field: log_check, value: ""}
+      - {say: "root cause is the 13:25 config rollout", field: server_root_cause, value: "The 13:25 config rollout shipped an invalid secret reference, crashing the gateway on boot."}
+  - intent: request_commit
+    say: "everything's there, file it"
+expected:
+  final_state:
+    affected_service: auth-gateway
+    symptom: server_down
+    outage_time: "2026-01-15T13:30:00"
+    server_root_cause: "The 13:25 config rollout shipped an invalid secret reference, crashing the gateway on boot."
+  valid_completion: [committed]
+  required_evidence: [deploy_check, log_check]
+  forbidden: []
+tool_script:
+  check_deployments: "Recent deployments: 13:25 config rollout to auth-gateway altered the vault secret path."
+  check_logs: "Boot logs show 'secret not found' fatal error repeating from 13:30 onward."

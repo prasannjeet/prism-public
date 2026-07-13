@@ -1,0 +1,33 @@
+id: t4-happy-medical-evacuation
+workflow: travel_insurance_claim
+category: multi_answer
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-200300, purchased 2025-10-01, email omar@example.com", field: policy_number, value: POL-200300}
+      - {say: "purchased 2025-10-01", field: policy_purchase_date, value: "2025-10-01"}
+      - {say: "email omar@example.com", field: claimant_email, value: omar@example.com}
+      - {say: "this is a medical claim for 8500", field: claim_type, value: medical}
+      - {say: "the amount is 8500", field: claimed_amount, value: "8500"}
+      - {say: "here is the physician statement", field: physician_statement, value: ""}
+      - {say: "it was a medical evacuation", field: medical_subtype, value: evacuation}
+      - {say: "and here is the evacuation necessity certification", field: evac_necessity_cert, value: ""}
+  - parts:
+      - {say: "the evacuation was medically necessary and is covered, approve it", field: medical_adjudication, value: "The air evacuation was medically necessary and is covered; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-200300
+    policy_purchase_date: "2025-10-01"
+    claimant_email: omar@example.com
+    claim_type: medical
+    claimed_amount: "8500"
+    medical_subtype: evacuation
+    medical_adjudication: "The air evacuation was medically necessary and is covered; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [physician_statement, evac_necessity_cert]
+  forbidden: [landed_premature_commit]
+tool_script:
+  upload_physician_statement: "Attending physician confirms acute condition requiring transfer to a tertiary facility."
+  upload_evac_certification: "Medical-necessity certification approves air evacuation to the nearest capable hospital."

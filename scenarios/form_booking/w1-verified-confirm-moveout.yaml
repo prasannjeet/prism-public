@@ -1,0 +1,29 @@
+id: w1-verified-confirm-moveout
+workflow: form_booking
+category: verified_confirm_commit
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "move-out clean", field: service_type, value: move_out}
+      - {say: "for Lena Fischer", field: customer_name, value: Lena Fischer}
+      - {say: "email lena@example.de", field: customer_email, value: lena@example.de}
+      - {say: "the 4th of April", field: preferred_date, value: "2026-04-04"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "3 rooms", field: num_rooms, value: "3"}
+      - {say: "yes, the deposit is in a protection scheme", field: deposit_protection, value: "yes"}
+      - {say: "landlord email is estate@lettings.de", field: landlord_email, value: estate@lettings.de}
+  - intent: request_commit
+    say: "yes, I have read it all back and everything is correct, you may confirm and book it"
+expected:
+  final_state:
+    service_type: move_out
+    customer_name: Lena Fischer
+    customer_email: lena@example.de
+    preferred_date: "2026-04-04"
+    preferred_time: morning
+    num_rooms: "3"
+    deposit_protection: "yes"
+    landlord_email: estate@lettings.de
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_unconfirmed_commit]

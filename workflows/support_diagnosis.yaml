@@ -1,0 +1,113 @@
+# W3 — customer-support triage. The hybrid: it starts form-like (a shared, validated account/issue
+# front-section), becomes investigation-like (per-branch diagnostic tools -> evidence -> an
+# evidence-gated conclusion), and ends with a resolution + a ticket commit. Verified profile: the
+# agent confirms the diagnosis + ticket with the customer before commit. Branching by category.
+# Proves the same YAML/engine spans the space between W1 (form) and W2 (investigation).
+workflow: support-diagnosis
+profile: verified
+
+fields:
+  # --- shared form (always active, validated) ---
+  - name: account_id
+    type: text
+    required: true
+    validate: { pattern: "ACC-[0-9]{6}" }
+    prompt: "What is your account ID? (format ACC-123456)"
+
+  - name: customer_email
+    type: email
+    required: true
+    validate: { pattern: email }
+    prompt: "Which email is on the account?"
+
+  - name: plan_tier
+    type: select
+    required: true
+    options: [basic, pro, enterprise]
+    prompt: "Which plan are you on?"
+
+  - name: issue_summary
+    type: text
+    required: true
+    validate: { length: { min: 10, max: 200 } }
+    prompt: "Briefly describe the issue (10-200 characters)."
+
+  # --- branch driver ---
+  - name: category
+    type: select
+    required: true
+    options: [billing, connectivity]
+    prompt: "Is this a billing or a connectivity issue?"
+
+  # --- branch: billing (1 answer + 2 evidence -> conclusion gated on both) ---
+  - name: invoice_number
+    type: text
+    required: true
+    show_when: category = billing
+    prompt: "Which invoice number is the charge on?"
+
+  - name: billing_lookup
+    type: evidence
+    required: true
+    show_when: category = billing
+    satisfied_by: [check_billing_history]
+
+  - name: payment_check
+    type: evidence
+    required: true
+    show_when: category = billing
+    satisfied_by: [check_payment_status]
+
+  - name: billing_resolution
+    type: conclusion
+    required: true
+    show_when: category = billing
+    requires_evidence: [billing_lookup, payment_check]
+    prompt: "State the resolution, citing the billing history and payment status."
+
+  # --- branch: connectivity (1 answer + 2 evidence -> conclusion gated on both) ---
+  - name: outage_started
+    type: date
+    required: true
+    show_when: category = connectivity
+    validate: { not_future: true }
+    prompt: "When did the connectivity problem start?"
+
+  - name: service_status
+    type: evidence
+    required: true
+    show_when: category = connectivity
+    satisfied_by: [check_service_status]
+
+  - name: line_test
+    type: evidence
+    required: true
+    show_when: category = connectivity
+    satisfied_by: [run_line_test]
+
+  - name: connectivity_resolution
+    type: conclusion
+    required: true
+    show_when: category = connectivity
+    requires_evidence: [service_status, line_test]
+    prompt: "State the resolution, citing the service status and line-test evidence."
+
+  # --- optional (always active) ---
+  - name: callback_number
+    type: text
+    required: false
+    prompt: "A callback number, in case we need to reach you? (optional)"
+
+tools:
+  - name: check_billing_history
+    description: "Return recent invoices and charges for the account."
+  - name: check_payment_status
+    description: "Return payment / auto-pay status and recent transactions."
+  - name: check_service_status
+    description: "Return current service / outage status for the account's region."
+  - name: run_line_test
+    description: "Run a connectivity line test and return the result."
+
+escalation:
+  when: evidence_insufficient
+  action: escalate_to_engineer

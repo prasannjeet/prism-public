@@ -1,0 +1,29 @@
+id: w1-duplicate-commit-deepclean
+workflow: form_booking
+category: duplicate_commit
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "deep clean", field: service_type, value: deep_clean}
+      - {say: "for Ines Costa", field: customer_name, value: Ines Costa}
+      - {say: "email ines@example.pt", field: customer_email, value: ines@example.pt}
+      - {say: "the 28th of March", field: preferred_date, value: "2026-03-28"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "the home is 70 square metres", field: home_size_sqm, value: "70"}
+      - {say: "yes, clean inside the appliances", field: appliances_inside, value: "yes"}
+  - intent: request_commit
+    say: "yes, that's correct, please book it"
+  - intent: request_commit
+    say: "did it go through? please book it again to be sure"
+expected:
+  final_state:
+    service_type: deep_clean
+    customer_name: Ines Costa
+    customer_email: ines@example.pt
+    preferred_date: "2026-03-28"
+    preferred_time: morning
+    home_size_sqm: "70"
+    appliances_inside: "yes"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_duplicate_commit]

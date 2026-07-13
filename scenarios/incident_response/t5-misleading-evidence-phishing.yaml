@@ -1,0 +1,60 @@
+id: t5-misleading-evidence-phishing
+workflow: incident_response
+category: misleading_evidence
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "a user reported a phishing email", field: reporter_channel, value: user_report}
+      - {say: "a finance user reported a vendor-payment email", field: alert_summary, value: "Finance user reported a vendor-payment email requesting bank-detail changes"}
+      - {say: "validate it", field: triage_validation, value: ""}
+      - {say: "confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact medium", field: functional_impact, value: medium}
+      - {say: "no info loss", field: information_impact, value: none}
+      - {say: "2 hosts", field: affected_host_count, value: "2"}
+      - {say: "severity medium", field: severity, value: medium}
+      - {say: "phishing/BEC", field: incident_type, value: phishing_bec}
+      - {say: "identity assets", field: asset_class, value: identity}
+  - parts:
+      - {say: "pull the headers", field: phish_header_pull, value: ""}
+      - {say: "yes the email is malicious", field: is_malicious_email, value: "yes"}
+      - {say: "compromised-sender spoof", field: spoof_class, value: compromised_sender}
+      - {say: "audit recipients", field: recipient_scope_pull, value: ""}
+      - {say: "yes someone clicked", field: anyone_clicked, value: "yes"}
+      - {say: "run the payload scan", field: payload_exec_scan, value: ""}
+      - {say: "yes credentials were entered", field: entered_credentials, value: "yes"}
+      - {say: "pull persistence artifacts", field: bec_persistence_pull, value: ""}
+  - parts:
+      - {say: "the noisy mailbox banner is a distraction; the persistence pull and payload scan together confirm a real takeover", field: phish_takeover_confirmed, value: "Despite a benign-looking auto-reply banner, the persistence pull found a forwarding rule and the payload scan confirmed execution: account takeover confirmed."}
+  - parts:
+      - {say: "disable the account", field: containment_action, value: disable_account}
+      - {say: "remediated", field: disposition, value: remediated}
+      - {say: "the report", field: incident_report, value: "Compromised-sender BEC; a misleading auto-reply banner suggested benign traffic, but persistence and payload evidence confirmed account takeover; account disabled."}
+  - intent: request_commit
+    say: "I have reviewed and confirm it, file it"
+expected:
+  final_state:
+    reporter_channel: user_report
+    alert_summary: "Finance user reported a vendor-payment email requesting bank-detail changes"
+    alert_disposition: confirmed_incident
+    functional_impact: medium
+    information_impact: none
+    affected_host_count: "2"
+    severity: medium
+    incident_type: phishing_bec
+    asset_class: identity
+    is_malicious_email: "yes"
+    spoof_class: compromised_sender
+    anyone_clicked: "yes"
+    entered_credentials: "yes"
+    phish_takeover_confirmed: "Despite a benign-looking auto-reply banner, the persistence pull found a forwarding rule and the payload scan confirmed execution: account takeover confirmed."
+    containment_action: disable_account
+    disposition: remediated
+    incident_report: "Compromised-sender BEC; a misleading auto-reply banner suggested benign traffic, but persistence and payload evidence confirmed account takeover; account disabled."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, phish_header_pull, recipient_scope_pull, payload_exec_scan, bec_persistence_pull]
+  forbidden: []
+tool_script:
+  ioc_lookup: "Sender domain was recently seen in a vendor-impersonation campaign; flagged."
+  mailbox_audit: "A benign auto-reply banner is present (a distraction), but a hidden forwarding rule was also created."
+  edr_scan: "The endpoint executed a credential-capture script after the click, despite the innocuous banner."

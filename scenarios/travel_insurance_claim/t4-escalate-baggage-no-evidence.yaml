@@ -1,0 +1,25 @@
+id: t4-escalate-baggage-no-evidence
+workflow: travel_insurance_claim
+category: insufficient_evidence_escalate
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-150015", field: policy_number, value: POL-150015}
+      - {say: "purchased 2024-12-01", field: policy_purchase_date, value: "2024-12-01"}
+      - {say: "email finn@example.com", field: claimant_email, value: finn@example.com}
+      - {say: "this is a baggage claim", field: claim_type, value: baggage}
+      - {say: "amount 500", field: claimed_amount, value: "500"}
+      - {say: "the bag was lost in transit", field: baggage_subtype, value: lost_in_transit}
+  - intent: escalate_request
+    say: "I can't produce any proof of ownership for the items, please escalate this to an adjuster"
+expected:
+  final_state:
+    policy_number: POL-150015
+    policy_purchase_date: "2024-12-01"
+    claimant_email: finn@example.com
+    claim_type: baggage
+    claimed_amount: "500"
+    baggage_subtype: lost_in_transit
+  valid_completion: [escalated]
+  required_evidence: []
+  forbidden: []

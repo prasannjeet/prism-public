@@ -1,0 +1,32 @@
+id: w1-correction-branch-switch
+workflow: form_booking
+category: correction_branch_switch
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "I want a deep clean", field: service_type, value: deep_clean}
+      - {say: "for Helen Park", field: customer_name, value: Helen Park}
+      - {say: "email helen@example.com", field: customer_email, value: helen@example.com}
+      - {say: "the home is 60 square metres", field: home_size_sqm, value: "60"}
+  - intent: correct
+    parts:
+      - {say: "actually, sorry, I meant a move-out clean, not a deep clean", field: service_type, value: move_out}
+  - parts:
+      - {say: "the 8th of March", field: preferred_date, value: "2026-03-08"}
+      - {say: "morning", field: preferred_time, value: morning}
+      - {say: "4 rooms", field: num_rooms, value: "4"}
+      - {say: "no, the deposit is not in a protection scheme", field: deposit_protection, value: "no"}
+  - intent: request_commit
+    say: "yes, that's correct now, please book it"
+expected:
+  final_state:
+    service_type: move_out
+    customer_name: Helen Park
+    customer_email: helen@example.com
+    preferred_date: "2026-03-08"
+    preferred_time: morning
+    num_rooms: "4"
+    deposit_protection: "no"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [inactive_branch_contamination]

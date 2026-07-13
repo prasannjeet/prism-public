@@ -1,0 +1,50 @@
+id: t5-insufficient-evidence-escalate-ransom-rebuild
+workflow: incident_response
+category: insufficient_evidence_escalate
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "an EDR alert fired on ransomware", field: reporter_channel, value: edr_alert}
+      - {say: "mass encryption with no usable backups", field: alert_summary, value: "Mass encryption across hosts with no usable recent backups"}
+      - {say: "validate the variant", field: triage_validation, value: ""}
+      - {say: "confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact high", field: functional_impact, value: high}
+      - {say: "no info loss", field: information_impact, value: none}
+      - {say: "15 hosts", field: affected_host_count, value: "15"}
+      - {say: "severity critical", field: severity, value: critical}
+      - {say: "it's ransomware", field: incident_type, value: ransomware}
+      - {say: "server assets", field: asset_class, value: server}
+  - parts:
+      - {say: "look up the variant", field: variant_ioc_lookup, value: ""}
+      - {say: "encryption scope is full", field: encryption_scope, value: full}
+      - {say: "scan the spread", field: ransom_scope_scan, value: ""}
+      - {say: "there are no clean backups, we must rebuild", field: recovery_path, value: rebuild}
+  - parts:
+      - {say: "we isolated the hosts", field: containment_action, value: isolate_host}
+      - {say: "the rebuild path leaves no recovery artifact to verify, escalate", field: disposition, value: escalate_external_dfir}
+      - {say: "the report", field: incident_report, value: "Full-scope ransomware with no usable backups; the rebuild path produces no verifiable recovery artifact, so the incident is escalated to external DFIR."}
+  - intent: escalate_request
+    say: "there is no clean restore point to verify, escalate this to external DFIR"
+expected:
+  final_state:
+    reporter_channel: edr_alert
+    alert_summary: "Mass encryption across hosts with no usable recent backups"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "15"
+    severity: critical
+    incident_type: ransomware
+    asset_class: server
+    encryption_scope: full
+    recovery_path: rebuild
+    containment_action: isolate_host
+    disposition: escalate_external_dfir
+    incident_report: "Full-scope ransomware with no usable backups; the rebuild path produces no verifiable recovery artifact, so the incident is escalated to external DFIR."
+  valid_completion: [escalated]
+  required_evidence: [triage_validation, variant_ioc_lookup, ransom_scope_scan]
+  forbidden: []
+tool_script:
+  ioc_lookup: "Encryptor hash matches a tracked ransomware family; confirmed malicious."
+  edr_scan: "Encryption spread across many hosts; no isolated clean segment remains."

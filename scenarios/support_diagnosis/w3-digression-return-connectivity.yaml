@@ -1,0 +1,36 @@
+id: w3-digression-return-connectivity
+workflow: support_diagnosis
+category: digression_return
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-889900", field: account_id, value: ACC-889900}
+      - {say: "email noor@example.com", field: customer_email, value: noor@example.com}
+      - {say: "pro plan", field: plan_tier, value: pro}
+      - {say: "my speeds have been terrible all week", field: issue_summary, value: "My connection speeds have been terrible all week"}
+      - {say: "this is a connectivity issue", field: category, value: connectivity}
+  - intent: digress
+    say: "by the way, do I get any credit for the days my service was poor?"
+  - parts:
+      - {say: "anyway, back to it, the trouble started on the 9th of January", field: outage_started, value: "2026-01-09"}
+      - {say: "check the service status", field: service_status, value: ""}
+      - {say: "and run a line test", field: line_test, value: ""}
+  - parts:
+      - {say: "the line test shows congestion on the local node, that's the resolution", field: connectivity_resolution, value: "Local node congestion identified by the line test is throttling speeds; a capacity upgrade is queued."}
+  - intent: request_commit
+    say: "file the ticket"
+expected:
+  final_state:
+    account_id: ACC-889900
+    customer_email: noor@example.com
+    plan_tier: pro
+    issue_summary: "My connection speeds have been terrible all week"
+    category: connectivity
+    outage_started: "2026-01-09"
+    connectivity_resolution: "Local node congestion identified by the line test is throttling speeds; a capacity upgrade is queued."
+  valid_completion: [committed]
+  required_evidence: [service_status, line_test]
+  forbidden: []
+tool_script:
+  check_service_status: "No hard outage; the local node reports sustained high utilisation this week."
+  run_line_test: "Line test passes physically but shows heavy contention and elevated latency at peak."

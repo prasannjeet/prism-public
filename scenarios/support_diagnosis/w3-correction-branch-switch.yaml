@@ -1,0 +1,37 @@
+id: w3-correction-branch-switch
+workflow: support_diagnosis
+category: correction_branch_switch
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-556677", field: account_id, value: ACC-556677}
+      - {say: "email theo@example.com", field: customer_email, value: theo@example.com}
+      - {say: "pro plan", field: plan_tier, value: pro}
+      - {say: "I'm having a problem with my service", field: issue_summary, value: "I am having an ongoing problem with my service"}
+      - {say: "I think it's a billing issue", field: category, value: billing}
+  - intent: correct
+    parts:
+      - {say: "actually no, it's not billing, my connection keeps dropping, this is a connectivity issue", field: category, value: connectivity}
+  - parts:
+      - {say: "it started on the 12th of January", field: outage_started, value: "2026-01-12"}
+      - {say: "check the service status", field: service_status, value: ""}
+      - {say: "and run a line test", field: line_test, value: ""}
+  - parts:
+      - {say: "the line test found a faulty modem handshake, that's the resolution", field: connectivity_resolution, value: "The line test traced the drops to a failing modem handshake; a replacement modem will be shipped."}
+  - intent: request_commit
+    say: "that's correct now, file the ticket"
+expected:
+  final_state:
+    account_id: ACC-556677
+    customer_email: theo@example.com
+    plan_tier: pro
+    issue_summary: "I am having an ongoing problem with my service"
+    category: connectivity
+    outage_started: "2026-01-12"
+    connectivity_resolution: "The line test traced the drops to a failing modem handshake; a replacement modem will be shipped."
+  valid_completion: [committed]
+  required_evidence: [service_status, line_test]
+  forbidden: [inactive_branch_contamination]
+tool_script:
+  check_service_status: "No regional outage; account-level signal flapping reported intermittently."
+  run_line_test: "Line test reveals repeated handshake renegotiations consistent with a failing modem."

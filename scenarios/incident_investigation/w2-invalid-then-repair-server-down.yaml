@@ -1,0 +1,33 @@
+id: w2-invalid-then-repair-server-down
+workflow: incident_investigation
+category: invalid_then_repair
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "notifications-service is down", field: affected_service, value: notifications-service}
+      - {say: "server_down, totally unresponsive", field: symptom, value: server_down}
+  - intent: invalid
+    parts:
+      - {say: "the outage started 2027-01-15 at 16:00", field: outage_time, value: "2027-01-15T16:00:00"}
+  - intent: correct
+    parts:
+      - {say: "sorry, wrong year, it started 2026-01-15 at 08:00", field: outage_time, value: "2026-01-15T08:00:00"}
+  - parts:
+      - {say: "run the deploy check", field: deploy_check, value: ""}
+      - {say: "and the log check", field: log_check, value: ""}
+  - parts:
+      - {say: "root cause was an out-of-memory kill after the new build", field: server_root_cause, value: "The 07:50 build raised heap usage past the limit, triggering repeated OOM kills."}
+  - intent: request_commit
+    say: "all correct now, file it"
+expected:
+  final_state:
+    affected_service: notifications-service
+    symptom: server_down
+    outage_time: "2026-01-15T08:00:00"
+    server_root_cause: "The 07:50 build raised heap usage past the limit, triggering repeated OOM kills."
+  valid_completion: [committed]
+  required_evidence: [deploy_check, log_check]
+  forbidden: [landed_invalid_value]
+tool_script:
+  check_deployments: "Recent deployments: 07:50 build of notifications-service bumped the in-memory queue size."
+  check_logs: "Kernel OOM killer terminated the process at 08:00, 08:03, 08:07."

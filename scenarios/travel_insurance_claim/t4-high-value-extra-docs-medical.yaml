@@ -1,0 +1,35 @@
+id: t4-high-value-extra-docs-medical
+workflow: travel_insurance_claim
+category: multi_answer
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-140014", field: policy_number, value: POL-140014}
+      - {say: "purchased 2025-01-05", field: policy_purchase_date, value: "2025-01-05"}
+      - {say: "email dora@example.com", field: claimant_email, value: dora@example.com}
+      - {say: "this is a medical claim for 25000", field: claim_type, value: medical}
+      - {say: "the amount is 25000", field: claimed_amount, value: "25000"}
+      - {say: "here is the physician statement", field: physician_statement, value: ""}
+      - {say: "it's a medical expense claim", field: medical_subtype, value: expense}
+      - {say: "the care was outpatient", field: medical_care_setting, value: outpatient}
+      - {say: "and here is the extra supporting documentation for the high-value claim", field: extra_documentation, value: ""}
+  - parts:
+      - {say: "the high-value outpatient care is documented and covered, approve it", field: medical_adjudication, value: "The high-value outpatient care is fully documented and covered; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-140014
+    policy_purchase_date: "2025-01-05"
+    claimant_email: dora@example.com
+    claim_type: medical
+    claimed_amount: "25000"
+    medical_subtype: expense
+    medical_care_setting: outpatient
+    medical_adjudication: "The high-value outpatient care is fully documented and covered; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [physician_statement]
+  forbidden: [landed_premature_commit]
+tool_script:
+  upload_physician_statement: "Attending physician confirms an extended outpatient treatment course."
+  upload_supporting_docs: "Itemized billing and treatment records supporting the high-value claim."

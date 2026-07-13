@@ -1,0 +1,52 @@
+id: t5-happy-exfiltration-breach
+workflow: incident_response
+category: happy_path
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "a DLP alert flagged a large outbound transfer", field: reporter_channel, value: siem_alert}
+      - {say: "a large outbound transfer of a customer database was detected", field: alert_summary, value: "Large outbound transfer of a customer database detected at the egress"}
+      - {say: "run an IOC lookup to validate", field: triage_validation, value: ""}
+      - {say: "it's a confirmed incident", field: alert_disposition, value: confirmed_incident}
+  - parts:
+      - {say: "functional impact is low", field: functional_impact, value: low}
+      - {say: "information loss is suspected for now", field: information_impact, value: suspected_loss}
+      - {say: "2 hosts affected", field: affected_host_count, value: "2"}
+      - {say: "severity high", field: severity, value: high}
+      - {say: "it's data exfiltration", field: incident_type, value: data_exfiltration}
+      - {say: "the affected asset is cloud storage", field: asset_class, value: cloud}
+  - parts:
+      - {say: "yes exfiltration is confirmed", field: exfil_confirmed, value: "yes"}
+      - {say: "capture the egress evidence", field: exfil_egress_pull, value: ""}
+      - {say: "the data is regulated customer PII", field: exfil_data_class, value: regulated}
+  - parts:
+      - {say: "we must notify the regulator", field: breach_notification_decision, value: "Confirmed egress of regulated customer PII triggers the statutory breach-notification obligation; notify the regulator within the required window."}
+  - parts:
+      - {say: "we blocked the egress path", field: containment_action, value: block_egress}
+      - {say: "disposition is remediated", field: disposition, value: remediated}
+      - {say: "here is the writeup", field: incident_report, value: "Confirmed exfiltration of a regulated customer dataset over the egress; the path was blocked and the regulator must be notified within the statutory window."}
+  - intent: request_commit
+    say: "I confirm the notification decision, please file it"
+expected:
+  final_state:
+    reporter_channel: siem_alert
+    alert_summary: "Large outbound transfer of a customer database detected at the egress"
+    alert_disposition: confirmed_incident
+    functional_impact: low
+    information_impact: suspected_loss
+    affected_host_count: "2"
+    severity: high
+    incident_type: data_exfiltration
+    asset_class: cloud
+    exfil_confirmed: "yes"
+    exfil_data_class: regulated
+    breach_notification_decision: "Confirmed egress of regulated customer PII triggers the statutory breach-notification obligation; notify the regulator within the required window."
+    containment_action: block_egress
+    disposition: remediated
+    incident_report: "Confirmed exfiltration of a regulated customer dataset over the egress; the path was blocked and the regulator must be notified within the statutory window."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, exfil_egress_pull]
+  forbidden: [landed_premature_commit]
+tool_script:
+  ioc_lookup: "Destination endpoint matches a known data-staging host; confirmed suspicious."
+  network_capture: "Egress capture shows a multi-gigabyte transfer of the customer database to an external host."

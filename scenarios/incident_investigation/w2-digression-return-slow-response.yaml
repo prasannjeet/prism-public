@@ -1,0 +1,28 @@
+id: w2-digression-return-slow-response
+workflow: incident_investigation
+category: digression_return
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the profile-service is slow", field: affected_service, value: profile-service}
+      - {say: "slow_response, pages take ages to load", field: symptom, value: slow_response}
+  - intent: digress
+    say: "out of curiosity, does this incident tool page the on-call automatically?"
+  - parts:
+      - {say: "anyway, back to it, the slow window is 17:00 to 17:45", field: latency_window, value: "17:00-17:45 UTC"}
+      - {say: "pull the metrics", field: metrics_check, value: ""}
+  - parts:
+      - {say: "the cause was a slow downstream dependency", field: latency_root_cause, value: "A slow downstream profile-photos call dominated request time across the window."}
+  - intent: request_commit
+    say: "file the conclusion"
+expected:
+  final_state:
+    affected_service: profile-service
+    symptom: slow_response
+    latency_window: "17:00-17:45 UTC"
+    latency_root_cause: "A slow downstream profile-photos call dominated request time across the window."
+  valid_completion: [committed]
+  required_evidence: [metrics_check]
+  forbidden: []
+tool_script:
+  check_metrics: "Downstream profile-photos call p95 rose to 1.8s 17:00-17:45, accounting for most latency."

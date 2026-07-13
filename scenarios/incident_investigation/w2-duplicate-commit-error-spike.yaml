@@ -1,0 +1,21 @@
+id: w2-duplicate-commit-error-spike
+workflow: incident_investigation
+category: duplicate_commit
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the email-sender is erroring out", field: affected_service, value: email-sender}
+      - {say: "error_spike, the failure rate jumped sharply", field: symptom, value: error_spike}
+      - {say: "sample: SMTPConnectError: connection refused by relay", field: error_sample, value: "SMTPConnectError: connection refused by relay"}
+  - intent: request_commit
+    say: "that's the sample, file the incident"
+  - intent: request_commit
+    say: "did that save? file it again just to be safe"
+expected:
+  final_state:
+    affected_service: email-sender
+    symptom: error_spike
+    error_sample: "SMTPConnectError: connection refused by relay"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: [landed_duplicate_commit]

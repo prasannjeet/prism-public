@@ -1,0 +1,32 @@
+id: w3-multi-answer-billing
+workflow: support_diagnosis
+category: multi_answer
+branch_field: category
+beats:
+  - parts:
+      - {say: "account ACC-314159, email lin@example.org, I'm on basic, this is a billing issue: I see a charge I don't recognise on invoice INV-90011, please pull billing history and payment status and conclude", field: account_id, value: ACC-314159}
+      - {say: "email lin@example.org", field: customer_email, value: lin@example.org}
+      - {say: "basic plan", field: plan_tier, value: basic}
+      - {say: "I see a charge I don't recognise this month", field: issue_summary, value: "I see a charge I do not recognise this month"}
+      - {say: "it's billing", field: category, value: billing}
+      - {say: "invoice INV-90011", field: invoice_number, value: INV-90011}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+      - {say: "the charge was a legitimate proration after a mid-cycle upgrade", field: billing_resolution, value: "The unrecognised charge is a valid mid-cycle proration after a plan change; no refund is due."}
+  - intent: request_commit
+    say: "everything is there, file the ticket"
+expected:
+  final_state:
+    account_id: ACC-314159
+    customer_email: lin@example.org
+    plan_tier: basic
+    issue_summary: "I see a charge I do not recognise this month"
+    category: billing
+    invoice_number: INV-90011
+    billing_resolution: "The unrecognised charge is a valid mid-cycle proration after a plan change; no refund is due."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: []
+tool_script:
+  check_billing_history: "Invoice INV-90011 includes a proration line dated to the plan change on the 6th."
+  check_payment_status: "Single successful charge; no duplicate or failed transactions on the account."

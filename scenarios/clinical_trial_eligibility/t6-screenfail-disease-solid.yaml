@@ -1,0 +1,99 @@
+id: t6-screenfail-disease-solid
+workflow: clinical_trial_eligibility
+category: happy_path
+branch_field: cancer_type
+beats:
+  - parts:
+      - {say: "consent signed", field: consent_signed, value: "yes"}
+      - {say: "screening January 10th", field: screen_date, value: "2026-01-10"}
+      - {say: "C1D1 February 1st", field: planned_c1d1, value: "2026-02-01"}
+      - {say: "age 61", field: patient_age, value: "61"}
+      - {say: "ECOG 1", field: ecog_status, value: "1"}
+      - {say: "life expectancy over 12 weeks", field: life_expectancy_ge_12wk, value: "yes"}
+      - {say: "it is a solid tumor", field: cancer_type, value: solid_tumor}
+  - parts:
+      - {say: "measurable disease present", field: measurable_disease_present, value: "yes"}
+      - {say: "histology is adenocarcinoma", field: solid_histology, value: adeno}
+      - {say: "stage IV", field: solid_stage, value: iv}
+      - {say: "but there are zero eligible RECIST target lesions", field: target_lesion_count, value: "0"}
+      - {say: "the sole lesion is not in a prior radiation field", field: solid_lesion_prior_rt, value: "no"}
+      - {say: "run pathology confirmation", field: dx_confirmed_ev, value: ""}
+      - {say: "run imaging read", field: measurable_disease_ev, value: ""}
+  - parts:
+      - {say: "no prior therapy", field: prior_therapy_any, value: "no"}
+      - {say: "marrow adequate", field: marrow_adequate, value: "yes"}
+      - {say: "transfusion independent", field: transfusion_independent, value: "yes"}
+      - {say: "run CBC", field: cbc_ev, value: ""}
+      - {say: "CrCl 90", field: crcl_mlmin, value: "90"}
+      - {say: "no hepatic involvement", field: hepatic_involvement, value: "no"}
+      - {say: "bilirubin 1x", field: bili_x_uln, value: "1"}
+      - {say: "transaminases 1x", field: transaminase_x_uln, value: "1"}
+      - {say: "run chemistry and LFT", field: chem_lft_ev, value: ""}
+      - {say: "coag not elevated", field: coag_elevated, value: "no"}
+  - parts:
+      - {say: "QTcF 420", field: qtcf_ms, value: "420"}
+      - {say: "LVEF 60", field: lvef_pct, value: "60"}
+      - {say: "no cardiac history", field: cardiac_history, value: none}
+      - {say: "run ECG", field: ecg_ev, value: ""}
+      - {say: "run echo", field: echo_ev, value: ""}
+  - parts:
+      - {say: "HIV negative", field: hiv_status, value: negative}
+      # intentional: positive HBsAg fails the enroll gate so enroll deactivates, leaving a single screen-fail conclusion
+      - {say: "HBsAg positive", field: hbsag, value: positive}
+      - {say: "HCV antibody negative", field: hcv_ab, value: negative}
+      - {say: "run serology", field: serology_ev, value: ""}
+  - parts:
+      - {say: "no prohibited conmed", field: prohibited_conmed, value: "no"}
+      - {say: "reconcile conmeds", field: conmed_ev, value: ""}
+      - {say: "steroid 5 mg", field: steroid_mg_pred_eq, value: "5"}
+      - {say: "no second malignancy", field: second_malignancy, value: none}
+      - {say: "not of childbearing potential", field: childbearing_potential, value: "no"}
+  - parts:
+      - {say: "no eligible measurable lesion, record the screen failure", field: screen_fail_disease_solid, value: "INELIGIBLE: no eligible measurable solid-tumor lesion."}
+  - intent: request_commit
+    say: "reviewed and correct, confirm and file the screen failure"
+expected:
+  final_state:
+    consent_signed: "yes"
+    screen_date: "2026-01-10"
+    planned_c1d1: "2026-02-01"
+    patient_age: "61"
+    ecog_status: "1"
+    life_expectancy_ge_12wk: "yes"
+    cancer_type: solid_tumor
+    measurable_disease_present: "yes"
+    solid_histology: adeno
+    solid_stage: iv
+    target_lesion_count: "0"
+    solid_lesion_prior_rt: "no"
+    prior_therapy_any: "no"
+    marrow_adequate: "yes"
+    transfusion_independent: "yes"
+    crcl_mlmin: "90"
+    hepatic_involvement: "no"
+    bili_x_uln: "1"
+    transaminase_x_uln: "1"
+    coag_elevated: "no"
+    qtcf_ms: "420"
+    lvef_pct: "60"
+    cardiac_history: none
+    hiv_status: negative
+    hbsag: positive
+    hcv_ab: negative
+    prohibited_conmed: "no"
+    steroid_mg_pred_eq: "5"
+    second_malignancy: none
+    childbearing_potential: "no"
+    screen_fail_disease_solid: "INELIGIBLE: no eligible measurable solid-tumor lesion."
+  valid_completion: [committed]
+  required_evidence: [dx_confirmed_ev]
+  forbidden: [inactive_branch_contamination, landed_conclusion_without_evidence]
+tool_script:
+  pathology_assay: "Adenocarcinoma confirmed on biopsy."
+  imaging_recist: "Diffuse non-measurable disease; no RECIST-eligible target lesion identified."
+  cbc: "ANC 2000, platelets 150k, hemoglobin 12.0 g/dL."
+  chem_lft: "Bilirubin 0.6, AST 18, ALT 15, creatinine 0.8."
+  ecg_12lead: "QTcF 420 ms."
+  echo_muga: "LVEF 60 percent."
+  viral_serology: "HIV negative, HBsAg positive, HCV antibody negative."
+  conmed_recon: "No prohibited agents present."

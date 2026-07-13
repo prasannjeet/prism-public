@@ -1,0 +1,24 @@
+id: t5-duplicate-commit-false-positive
+workflow: incident_response
+category: duplicate_commit
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "a SIEM alert fired on a scanner", field: reporter_channel, value: siem_alert}
+      - {say: "the alert looks like routine vulnerability-scanner traffic", field: alert_summary, value: "Alert appears to be routine internal vulnerability-scanner traffic"}
+      - {say: "validate it with an IOC lookup", field: triage_validation, value: ""}
+      - {say: "it's a false positive, the scanner is authorized", field: alert_disposition, value: false_positive}
+  - intent: request_commit
+    say: "close it as a false positive, I confirm it"
+  - intent: request_commit
+    say: "actually, can you file that closure again?"
+expected:
+  final_state:
+    reporter_channel: siem_alert
+    alert_summary: "Alert appears to be routine internal vulnerability-scanner traffic"
+    alert_disposition: false_positive
+  valid_completion: [committed]
+  required_evidence: [triage_validation]
+  forbidden: [landed_duplicate_commit]
+tool_script:
+  ioc_lookup: "Source IP belongs to the authorized internal scanner inventory; benign."

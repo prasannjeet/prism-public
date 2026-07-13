@@ -1,0 +1,113 @@
+{
+  "budget_usd": 256.11222029999993,
+  "configs": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "git_commit": "ad445aa010f4965d8bc89638a23a41ac4ee5cf42",
+  "models": [
+    {
+      "allowed_configs": [
+        "C5",
+        "C1",
+        "C2",
+        "C4",
+        "C3"
+      ],
+      "name": "claude-haiku-4-5"
+    },
+    {
+      "allowed_configs": [
+        "C5",
+        "C1",
+        "C2",
+        "C4",
+        "C3"
+      ],
+      "name": "gpt-5.4-mini"
+    },
+    {
+      "allowed_configs": [
+        "C5",
+        "C1",
+        "C2",
+        "C4",
+        "C3"
+      ],
+      "name": "gemini-3.1-flash-lite"
+    },
+    {
+      "allowed_configs": [
+        "C1",
+        "C5"
+      ],
+      "name": "claude-sonnet-4-6"
+    }
+  ],
+  "prices": {
+    "claude-haiku-4-5": {
+      "cache_read_per_mtok": 0.1,
+      "cache_write_per_mtok": 1.25,
+      "input_per_mtok": 1.0,
+      "output_per_mtok": 5.0
+    },
+    "claude-sonnet-4-6": {
+      "cache_read_per_mtok": 0.3,
+      "cache_write_per_mtok": 3.75,
+      "input_per_mtok": 3.0,
+      "output_per_mtok": 15.0
+    },
+    "gemini-3.1-flash-lite": {
+      "cache_read_per_mtok": 0.0,
+      "cache_write_per_mtok": 0.0,
+      "input_per_mtok": 0.1,
+      "output_per_mtok": 0.4
+    },
+    "gpt-5.4-mini": {
+      "cache_read_per_mtok": 0.0,
+      "cache_write_per_mtok": 0.0,
+      "input_per_mtok": 0.25,
+      "output_per_mtok": 2.0
+    }
+  },
+  "run_id": "prism-full-01",
+  "scenario_count": 31,
+  "scenario_ids": [
+    "t5-correction-branch-switch-phish-to-ransom",
+    "t5-duplicate-commit-false-positive",
+    "t5-exfil-via-info-impact-confirmed-loss",
+    "t5-happy-credentials-eradication",
+    "t5-happy-exfiltration-breach",
+    "t5-happy-phishing-takeover",
+    "t5-happy-ransomware-restore",
+    "t5-insufficient-evidence-escalate-ransom-rebuild",
+    "t5-insufficient-evidence-escalate-ransom-stale",
+    "t5-misleading-evidence-phishing",
+    "t5-multi-answer-phishing",
+    "t5-out-of-order-ransomware",
+    "t5-premature-commit-credentials",
+    "t5-prompt-injection-ransomware",
+    "t6-correction-branch-switch-deep",
+    "t6-duplicate-commit",
+    "t6-escalate-cohort-lymphoma",
+    "t6-happy-enroll-lymphoma",
+    "t6-happy-enroll-solid",
+    "t6-misleading-evidence-serology",
+    "t6-out-of-order-shared-head",
+    "t6-premature-commit",
+    "t6-prompt-injection",
+    "t6-refer-waiver-marrow",
+    "t6-rescreen-washout",
+    "t6-screenfail-disease-leukemia",
+    "t6-screenfail-disease-lymphoma",
+    "t6-screenfail-disease-solid",
+    "t6-screenfail-no-measurable",
+    "t6-screenfail-safety-qtc",
+    "t6-verified-confirm-enroll"
+  ],
+  "seeds": 2,
+  "today": "2026-01-15"
+}

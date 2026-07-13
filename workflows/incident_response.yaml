@@ -1,0 +1,391 @@
+# T5 — security-incident response. A deliberately DEEPER, multi-driver sibling of W2
+# (incident_investigation): one incident driven from intake to disposition through four
+# type-specific deep subtrees (phishing/bec, ransomware, compromised_credentials,
+# data_exfiltration), each a genuine 4-5 level stacked chain, plus a real numeric show_when
+# guard (affected_host_count >= 50) and a nested all_of[any_of[...]] breach gate. Verified
+# profile: containment/eradication/notification are irreversible, so the agent must confirm
+# before commit. Uses the compound-condition engine extension; no new node kinds.
+workflow: incident-response
+profile: verified
+
+fields:
+  # --- shared triage stem (always active) ---
+  - name: reporter_channel
+    type: select
+    required: true
+    options: [siem_alert, user_report, threat_intel, edr_alert]
+    prompt: "How was this incident reported?"
+
+  - name: alert_summary
+    type: text
+    required: true
+    validate: { length: { min: 10, max: 500 } }
+    prompt: "Summarize the alert (10-500 characters)."
+
+  - name: triage_validation
+    type: evidence
+    required: true
+    satisfied_by: [ioc_lookup, edr_scan]
+
+  - name: alert_disposition
+    type: select
+    required: true
+    options: [confirmed_incident, false_positive]
+    prompt: "After validation, is this a confirmed incident or a false positive?"
+
+  # --- severity + classification drivers (only on a confirmed incident) ---
+  - name: functional_impact
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [none, low, medium, high]
+    prompt: "What is the functional impact?"
+
+  - name: information_impact
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [none, suspected_loss, confirmed_loss]
+    prompt: "What is the information impact?"
+
+  - name: affected_host_count
+    type: number
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    validate: { range: { min: 0, max: 100000 } }
+    prompt: "How many hosts are affected?"
+
+  - name: severity
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [low, medium, high, critical]
+    prompt: "Assign a severity."
+
+  - name: incident_type
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [phishing_bec, ransomware, compromised_credentials, data_exfiltration]
+    prompt: "Classify the incident type."
+
+  - name: asset_class
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [endpoint, server, cloud, identity]
+    prompt: "What class of asset is primarily affected?"
+
+  # --- numeric breach-bridge note (NUMERIC GUARD: visible only at >= 50 hosts) ---
+  - name: mass_incident_bridge_note
+    type: text
+    required: false
+    validate: { length: { min: 0, max: 1000 } }
+    show_when:
+      all_of:
+        - "alert_disposition = confirmed_incident"
+        - { field: affected_host_count, op: ">=", value: 50 }
+    prompt: "Mass-incident coordination note (optional, surfaced because 50+ hosts are affected)."
+
+  # ===================== PHISHING / BEC branch =====================
+  - name: phish_header_pull
+    type: evidence
+    required: true
+    show_when: incident_type = phishing_bec
+    satisfied_by: [mailbox_audit]
+
+  - name: is_malicious_email
+    type: select
+    required: true
+    show_when: incident_type = phishing_bec
+    options: ["yes", "no"]
+    prompt: "Is the reported email actually malicious?"
+
+  - name: spoof_class
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "is_malicious_email = yes"
+    options: [display_name, lookalike_domain, compromised_sender]
+    prompt: "Classify the spoofing technique."
+
+  - name: recipient_scope_pull
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "is_malicious_email = yes"
+    satisfied_by: [mailbox_audit]
+
+  - name: anyone_clicked
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "is_malicious_email = yes"
+    options: ["yes", "no"]
+    prompt: "Did any recipient click or interact with the email?"
+
+  - name: payload_exec_scan
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "anyone_clicked = yes"
+    satisfied_by: [edr_scan]
+
+  - name: entered_credentials
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "anyone_clicked = yes"
+    options: ["yes", "no"]
+    prompt: "Did a recipient enter credentials on the phishing page?"
+
+  - name: bec_persistence_pull
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "entered_credentials = yes"
+    satisfied_by: [mailbox_audit, identity_graph]
+
+  - name: phish_takeover_confirmed
+    type: conclusion
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = phishing_bec"
+        - "entered_credentials = yes"
+    requires_evidence: [bec_persistence_pull, payload_exec_scan]
+    prompt: "State the account-takeover finding, citing the persistence pull and the payload scan."
+
+  # ============ RANSOMWARE / MALWARE branch (genuine 4-level stacked chain) ============
+  - name: variant_ioc_lookup
+    type: evidence
+    required: true
+    show_when: incident_type = ransomware
+    satisfied_by: [ioc_lookup]
+
+  - name: encryption_scope
+    type: select
+    required: true
+    show_when: incident_type = ransomware
+    options: [none, partial, full]
+    prompt: "What is the encryption scope?"
+
+  - name: ransom_scope_scan
+    type: evidence
+    required: true
+    show_when: incident_type = ransomware
+    satisfied_by: [edr_scan, network_capture]
+
+  - name: recovery_path
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = ransomware"
+        - any_of:
+            - "encryption_scope = partial"
+            - "encryption_scope = full"
+    options: [restore_from_backup, rebuild, negotiate]
+    prompt: "Which recovery path is chosen?"
+
+  - name: data_impact_scan
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = ransomware"
+        - "recovery_path = restore_from_backup"
+    satisfied_by: [file_integrity]
+
+  - name: backup_freshness
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = ransomware"
+        - "recovery_path = restore_from_backup"
+    options: [within_24h, within_7d, older_or_unknown]
+    prompt: "How fresh is the most recent clean backup?"
+
+  - name: backup_integrity_check
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = ransomware"
+        - "recovery_path = restore_from_backup"
+        - any_of:
+            - "backup_freshness = within_24h"
+            - "backup_freshness = within_7d"
+    satisfied_by: [backup_check]
+
+  - name: ransom_recovery_decision
+    type: conclusion
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = ransomware"
+        - "recovery_path = restore_from_backup"
+        - any_of:
+            - "backup_freshness = within_24h"
+            - "backup_freshness = within_7d"
+    requires_evidence: [backup_integrity_check, data_impact_scan, ransom_scope_scan]
+    prompt: "State the restore-vs-pay recovery decision, citing the backup integrity, data impact, and ransom scope."
+
+  # ===================== COMPROMISED CREDENTIALS branch =====================
+  - name: compromise_confirm_pull
+    type: evidence
+    required: true
+    show_when: incident_type = compromised_credentials
+    satisfied_by: [auth_log]
+
+  - name: principal_type
+    type: select
+    required: true
+    show_when: incident_type = compromised_credentials
+    options: [human_user, service_account, admin]
+    prompt: "What kind of principal was compromised?"
+
+  - name: attacker_activity_pull
+    type: evidence
+    required: true
+    show_when: incident_type = compromised_credentials
+    satisfied_by: [auth_log, identity_graph]
+
+  - name: persistence_established
+    type: select
+    required: true
+    show_when: incident_type = compromised_credentials
+    options: ["yes", "no"]
+    prompt: "Did the attacker establish persistence?"
+
+  - name: backdoor_enum_pull
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = compromised_credentials"
+        - "persistence_established = yes"
+    satisfied_by: [identity_graph]
+
+  - name: cred_eradication_plan
+    type: conclusion
+    required: true
+    show_when:
+      all_of:
+        - "incident_type = compromised_credentials"
+        - "persistence_established = yes"
+    requires_evidence: [backdoor_enum_pull, attacker_activity_pull, compromise_confirm_pull]
+    prompt: "State the credential-eradication plan, citing the backdoor enumeration, attacker activity, and compromise confirmation."
+
+  # ============ DATA EXFILTRATION branch (also reachable via info_impact=confirmed_loss) ============
+  - name: exfil_confirmed
+    type: select
+    required: true
+    show_when:
+      any_of:
+        - "incident_type = data_exfiltration"
+        - "information_impact = confirmed_loss"
+    options: ["yes", "no"]
+    prompt: "Is data exfiltration confirmed?"
+
+  - name: exfil_egress_pull
+    type: evidence
+    required: true
+    show_when:
+      all_of:
+        - any_of:
+            - "incident_type = data_exfiltration"
+            - "information_impact = confirmed_loss"
+        - "exfil_confirmed = yes"
+    satisfied_by: [network_capture, dlp_log]
+
+  - name: exfil_data_class
+    type: select
+    required: true
+    show_when:
+      all_of:
+        - any_of:
+            - "incident_type = data_exfiltration"
+            - "information_impact = confirmed_loss"
+        - "exfil_confirmed = yes"
+    options: [public, internal, regulated]
+    prompt: "Classify the exfiltrated data."
+
+  - name: breach_notification_decision
+    type: conclusion
+    required: true
+    show_when:
+      all_of:
+        - any_of:
+            - "incident_type = data_exfiltration"
+            - "information_impact = confirmed_loss"
+        - "exfil_confirmed = yes"
+        - "exfil_data_class = regulated"
+    requires_evidence: [exfil_egress_pull]
+    prompt: "State the regulatory breach-notification decision, citing the confirmed egress of regulated data."
+
+  # ===================== SHARED DISPOSITION + POST-INCIDENT TAIL =====================
+  - name: containment_action
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [isolate_host, disable_account, block_egress, no_action]
+    prompt: "What containment action was taken?"
+
+  - name: disposition
+    type: select
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    options: [remediated, escalate_external_dfir, false_positive_closed]
+    prompt: "What is the final disposition?"
+
+  - name: incident_report
+    type: text
+    required: true
+    show_when: alert_disposition = confirmed_incident
+    validate: { length: { min: 30, max: 4000 } }
+    prompt: "Write the incident report (30-4000 characters)."
+
+  - name: lessons_learned
+    type: text
+    required: false
+    show_when: alert_disposition = confirmed_incident
+    validate: { length: { min: 0, max: 2000 } }
+    prompt: "Lessons learned (optional)."
+
+tools:
+  - name: ioc_lookup
+    description: "Look up indicators of compromise (hashes, domains, IPs) against threat intel."
+  - name: edr_scan
+    description: "Run an endpoint detection-and-response scan for malicious execution."
+  - name: mailbox_audit
+    description: "Audit mailbox activity, headers, rules, and recipient scope."
+  - name: auth_log
+    description: "Return authentication and sign-in logs for the principal."
+  - name: network_capture
+    description: "Return network egress capture for the affected hosts and window."
+  - name: dlp_log
+    description: "Return data-loss-prevention events for the affected data."
+  - name: file_integrity
+    description: "Run a file-integrity / impact scan over the affected file systems."
+  - name: identity_graph
+    description: "Enumerate identity relationships, tokens, and persistence artifacts."
+  - name: backup_check
+    description: "Verify the integrity and restorability of the most recent clean backup."
+
+escalation:
+  when: evidence_insufficient
+  action: escalate_external_dfir

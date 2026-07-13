@@ -1,0 +1,25 @@
+id: w2-insufficient-evidence-escalate
+workflow: incident_investigation
+category: insufficient_evidence_escalate
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the ledger-service is down", field: affected_service, value: ledger-service}
+      - {say: "server_down, it crashed and won't come back", field: symptom, value: server_down}
+      - {say: "the outage started at 06:00 today", field: outage_time, value: "2026-01-15T06:00:00"}
+  - parts:
+      - {say: "run the deploy check", field: deploy_check, value: ""}
+      - {say: "and the log check", field: log_check, value: ""}
+  - intent: escalate_request
+    say: "the evidence is inconclusive, I can't determine a root cause, escalate this to an engineer"
+expected:
+  final_state:
+    affected_service: ledger-service
+    symptom: server_down
+    outage_time: "2026-01-15T06:00:00"
+  valid_completion: [escalated]
+  required_evidence: [deploy_check, log_check]
+  forbidden: []
+tool_script:
+  check_deployments: "No deployments found in the relevant window."
+  check_logs: "Logs were truncated and inconclusive; no clear error signature."

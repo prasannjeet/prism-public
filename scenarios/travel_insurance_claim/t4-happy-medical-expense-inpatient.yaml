@@ -1,0 +1,36 @@
+id: t4-happy-medical-expense-inpatient
+workflow: travel_insurance_claim
+category: happy_path
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-100200", field: policy_number, value: POL-100200}
+      - {say: "I bought it on 2025-11-15", field: policy_purchase_date, value: "2025-11-15"}
+      - {say: "email me at mona@example.com", field: claimant_email, value: mona@example.com}
+      - {say: "it's a medical claim", field: claim_type, value: medical}
+      - {say: "the amount is 4200", field: claimed_amount, value: "4200"}
+  - parts:
+      - {say: "here is the physician statement", field: physician_statement, value: ""}
+      - {say: "it's a medical expense claim", field: medical_subtype, value: expense}
+      - {say: "care was inpatient", field: medical_care_setting, value: inpatient}
+      - {say: "admitted 2026-01-02, discharged 2026-01-05", field: admit_discharge_dates, value: "2026-01-02 to 2026-01-05"}
+  - parts:
+      - {say: "the inpatient expenses are covered, approve it, that's the adjudication", field: medical_adjudication, value: "Inpatient expenses are covered under the policy; the claim is approved for the stated amount."}
+  - intent: request_commit
+    say: "yes that's all correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-100200
+    policy_purchase_date: "2025-11-15"
+    claimant_email: mona@example.com
+    claim_type: medical
+    claimed_amount: "4200"
+    medical_subtype: expense
+    medical_care_setting: inpatient
+    admit_discharge_dates: "2026-01-02 to 2026-01-05"
+    medical_adjudication: "Inpatient expenses are covered under the policy; the claim is approved for the stated amount."
+  valid_completion: [committed]
+  required_evidence: [physician_statement]
+  forbidden: [landed_premature_commit]
+tool_script:
+  upload_physician_statement: "Attending physician confirms a 3-night inpatient admission for an acute condition."

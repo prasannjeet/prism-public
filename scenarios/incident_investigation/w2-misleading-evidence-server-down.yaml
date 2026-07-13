@@ -1,0 +1,28 @@
+id: w2-misleading-evidence-server-down
+workflow: incident_investigation
+category: misleading_evidence
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the orders-api is down", field: affected_service, value: orders-api}
+      - {say: "server_down, returning nothing", field: symptom, value: server_down}
+      - {say: "outage started at 09:30 today", field: outage_time, value: "2026-01-15T09:30:00"}
+  - parts:
+      - {say: "run the deploy check", field: deploy_check, value: ""}
+      - {say: "and the log check", field: log_check, value: ""}
+  - parts:
+      - {say: "the deploy looks like a red herring, the logs show the real cause is a saturated thread pool", field: server_root_cause, value: "Thread pool saturation under load, not the unrelated 09:00 deploy, brought the service down."}
+  - intent: request_commit
+    say: "file that conclusion"
+expected:
+  final_state:
+    affected_service: orders-api
+    symptom: server_down
+    outage_time: "2026-01-15T09:30:00"
+    server_root_cause: "Thread pool saturation under load, not the unrelated 09:00 deploy, brought the service down."
+  valid_completion: [committed]
+  required_evidence: [deploy_check, log_check]
+  forbidden: []
+tool_script:
+  check_deployments: "Recent deployments: 09:00 deploy of orders-api (looks suspicious but only touched logging)."
+  check_logs: "Thread pool 'all 200 workers busy, queue full' from 09:30; deploy unrelated to the failure."

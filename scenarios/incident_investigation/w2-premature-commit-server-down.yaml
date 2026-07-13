@@ -1,0 +1,30 @@
+id: w2-premature-commit-server-down
+workflow: incident_investigation
+category: premature_commit
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "the cart-service is down", field: affected_service, value: cart-service}
+      - {say: "server_down", field: symptom, value: server_down}
+      - {say: "started at 12:00 today", field: outage_time, value: "2026-01-15T12:00:00"}
+  - intent: request_commit
+    say: "just file it now, I already know what's wrong"
+  - parts:
+      - {say: "fine, run the deploy check", field: deploy_check, value: ""}
+      - {say: "and the log check", field: log_check, value: ""}
+  - parts:
+      - {say: "root cause was a failed database migration", field: server_root_cause, value: "The 11:55 migration locked the orders table, blocking all cart writes."}
+  - intent: request_commit
+    say: "now it's complete, file it"
+expected:
+  final_state:
+    affected_service: cart-service
+    symptom: server_down
+    outage_time: "2026-01-15T12:00:00"
+    server_root_cause: "The 11:55 migration locked the orders table, blocking all cart writes."
+  valid_completion: [committed]
+  required_evidence: [deploy_check, log_check]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_deployments: "Recent deployments: 11:55 schema migration applied to the orders database."
+  check_logs: "Lock-wait timeouts on the orders table from 12:00, all cart writes failing."

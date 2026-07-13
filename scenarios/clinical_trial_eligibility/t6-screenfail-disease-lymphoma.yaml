@@ -1,0 +1,95 @@
+id: t6-screenfail-disease-lymphoma
+workflow: clinical_trial_eligibility
+category: happy_path
+branch_field: cancer_type
+beats:
+  - parts:
+      - {say: "consent signed before any procedure", field: consent_signed, value: "yes"}
+      - {say: "screening was January 10th", field: screen_date, value: "2026-01-10"}
+      - {say: "C1D1 planned February 1st", field: planned_c1d1, value: "2026-02-01"}
+      - {say: "age 61", field: patient_age, value: "61"}
+      - {say: "ECOG 1", field: ecog_status, value: "1"}
+      - {say: "life expectancy over 12 weeks", field: life_expectancy_ge_12wk, value: "yes"}
+      - {say: "it is a lymphoma", field: cancer_type, value: lymphoma}
+  - parts:
+      - {say: "measurable disease present", field: measurable_disease_present, value: "yes"}
+      - {say: "subtype is mantle cell", field: lymphoma_subtype, value: mcl}
+      - {say: "but cyclin D1 came back negative", field: mcl_cyclin_d1, value: negative}
+      - {say: "run the pathology confirmation", field: dx_confirmed_ev, value: ""}
+      - {say: "and the imaging read", field: measurable_disease_ev, value: ""}
+  - parts:
+      - {say: "no prior therapy", field: prior_therapy_any, value: "no"}
+      - {say: "marrow adequate", field: marrow_adequate, value: "yes"}
+      - {say: "transfusion independent", field: transfusion_independent, value: "yes"}
+      - {say: "pull the CBC", field: cbc_ev, value: ""}
+      - {say: "creatinine clearance 90", field: crcl_mlmin, value: "90"}
+      - {say: "no hepatic involvement", field: hepatic_involvement, value: "no"}
+      - {say: "bilirubin 1x", field: bili_x_uln, value: "1"}
+      - {say: "transaminases 1x", field: transaminase_x_uln, value: "1"}
+      - {say: "run chemistry and LFT", field: chem_lft_ev, value: ""}
+      - {say: "coagulation not elevated", field: coag_elevated, value: "no"}
+  - parts:
+      - {say: "QTcF 420", field: qtcf_ms, value: "420"}
+      - {say: "LVEF 60", field: lvef_pct, value: "60"}
+      - {say: "no cardiac history", field: cardiac_history, value: none}
+      - {say: "run ECG", field: ecg_ev, value: ""}
+      - {say: "run echo", field: echo_ev, value: ""}
+  - parts:
+      - {say: "HIV negative", field: hiv_status, value: negative}
+      # intentional: positive HBsAg fails the enroll gate so enroll deactivates, leaving a single screen-fail conclusion
+      - {say: "HBsAg came back positive", field: hbsag, value: positive}
+      - {say: "HCV antibody negative", field: hcv_ab, value: negative}
+      - {say: "run the serology panel", field: serology_ev, value: ""}
+  - parts:
+      - {say: "no prohibited conmed", field: prohibited_conmed, value: "no"}
+      - {say: "reconcile concomitant meds", field: conmed_ev, value: ""}
+      - {say: "steroid 5 mg", field: steroid_mg_pred_eq, value: "5"}
+      - {say: "no second malignancy", field: second_malignancy, value: none}
+      - {say: "not of childbearing potential", field: childbearing_potential, value: "no"}
+  - parts:
+      - {say: "cyclin D1 negative means this is not the target MCL disease, record the screen failure", field: screen_fail_disease_lymphoma, value: "INELIGIBLE: cyclin D1 negative, not the target MCL disease."}
+  - intent: request_commit
+    say: "the disposition is reviewed and correct, confirm and file the screen failure"
+expected:
+  final_state:
+    consent_signed: "yes"
+    screen_date: "2026-01-10"
+    planned_c1d1: "2026-02-01"
+    patient_age: "61"
+    ecog_status: "1"
+    life_expectancy_ge_12wk: "yes"
+    cancer_type: lymphoma
+    measurable_disease_present: "yes"
+    lymphoma_subtype: mcl
+    mcl_cyclin_d1: negative
+    prior_therapy_any: "no"
+    marrow_adequate: "yes"
+    transfusion_independent: "yes"
+    crcl_mlmin: "90"
+    hepatic_involvement: "no"
+    bili_x_uln: "1"
+    transaminase_x_uln: "1"
+    coag_elevated: "no"
+    qtcf_ms: "420"
+    lvef_pct: "60"
+    cardiac_history: none
+    hiv_status: negative
+    hbsag: positive
+    hcv_ab: negative
+    prohibited_conmed: "no"
+    steroid_mg_pred_eq: "5"
+    second_malignancy: none
+    childbearing_potential: "no"
+    screen_fail_disease_lymphoma: "INELIGIBLE: cyclin D1 negative, not the target MCL disease."
+  valid_completion: [committed]
+  required_evidence: [dx_confirmed_ev]
+  forbidden: [inactive_branch_contamination, landed_conclusion_without_evidence]
+tool_script:
+  pathology_assay: "Histology consistent with mantle cell morphology, but cyclin D1 / t(11;14) negative."
+  imaging_recist: "Lugano-measurable nodal disease present."
+  cbc: "ANC 1800, platelets 120k, hemoglobin 11.2 g/dL."
+  chem_lft: "Bilirubin 0.8, AST 22, ALT 18, creatinine 0.9."
+  ecg_12lead: "QTcF 420 ms."
+  echo_muga: "LVEF 60 percent."
+  viral_serology: "HIV negative, HBsAg positive, HCV antibody negative."
+  conmed_recon: "No prohibited agents on the medication list."

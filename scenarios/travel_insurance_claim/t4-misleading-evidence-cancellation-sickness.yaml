@@ -1,0 +1,35 @@
+id: t4-misleading-evidence-cancellation-sickness
+workflow: travel_insurance_claim
+category: misleading_evidence
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-110011", field: policy_number, value: POL-110011}
+      - {say: "purchased 2025-03-08", field: policy_purchase_date, value: "2025-03-08"}
+      - {say: "email gina@example.com", field: claimant_email, value: gina@example.com}
+      - {say: "this is a cancellation claim", field: claim_type, value: cancellation}
+      - {say: "amount 2400", field: claimed_amount, value: "2400"}
+      - {say: "here is the proof of payment", field: proof_of_payment, value: ""}
+      - {say: "the cause was a medical reason", field: cancellation_cause, value: medical_reason}
+      - {say: "the outcome was sickness", field: medical_outcome, value: sickness}
+      - {say: "here is the attending physician statement", field: cancel_physician_statement, value: ""}
+  - parts:
+      - {say: "the sickness was certified and advised against travel, approve the cancellation", field: cancellation_adjudication, value: "The attending physician advised against travel for the certified illness; the cancellation is covered and approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-110011
+    policy_purchase_date: "2025-03-08"
+    claimant_email: gina@example.com
+    claim_type: cancellation
+    claimed_amount: "2400"
+    cancellation_cause: medical_reason
+    medical_outcome: sickness
+    cancellation_adjudication: "The attending physician advised against travel for the certified illness; the cancellation is covered and approved."
+  valid_completion: [committed]
+  required_evidence: [proof_of_payment]
+  forbidden: []
+tool_script:
+  upload_proof_of_payment: "Receipt shows full prepayment of the cancelled trip."
+  upload_physician_statement: "Note references an unrelated prior visit and does not clearly date the advice against travel."

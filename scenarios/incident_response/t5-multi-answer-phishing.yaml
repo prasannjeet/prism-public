@@ -1,0 +1,57 @@
+id: t5-multi-answer-phishing
+workflow: incident_response
+category: multi_answer
+branch_field: incident_type
+beats:
+  - parts:
+      - {say: "a user reported a phishing email; it's a confirmed phishing/BEC incident, identity assets, severity high, no data loss, 4 hosts, functional impact high", field: reporter_channel, value: user_report}
+      - {say: "summary of the report", field: alert_summary, value: "A user reported a credential-harvesting email impersonating IT support"}
+      - {say: "validate with an IOC lookup", field: triage_validation, value: ""}
+      - {say: "confirmed incident", field: alert_disposition, value: confirmed_incident}
+      - {say: "functional impact high", field: functional_impact, value: high}
+      - {say: "no info loss", field: information_impact, value: none}
+      - {say: "4 hosts", field: affected_host_count, value: "4"}
+      - {say: "severity high", field: severity, value: high}
+      - {say: "phishing/BEC", field: incident_type, value: phishing_bec}
+      - {say: "identity assets", field: asset_class, value: identity}
+      - {say: "pull the headers", field: phish_header_pull, value: ""}
+      - {say: "yes malicious", field: is_malicious_email, value: "yes"}
+      - {say: "display-name spoof", field: spoof_class, value: display_name}
+      - {say: "audit recipients", field: recipient_scope_pull, value: ""}
+      - {say: "yes someone clicked", field: anyone_clicked, value: "yes"}
+      - {say: "run the payload scan", field: payload_exec_scan, value: ""}
+      - {say: "yes credentials were entered", field: entered_credentials, value: "yes"}
+      - {say: "pull persistence", field: bec_persistence_pull, value: ""}
+  - parts:
+      - {say: "confirmed takeover, here is the disposition and report", field: phish_takeover_confirmed, value: "Display-name spoof of IT support; a user entered credentials and an inbox rule persisted, with payload execution confirmed: account takeover."}
+      - {say: "disable the account", field: containment_action, value: disable_account}
+      - {say: "remediated", field: disposition, value: remediated}
+      - {say: "the report", field: incident_report, value: "Display-name BEC impersonating IT support led to credential entry and inbox-rule persistence; account disabled and sessions revoked."}
+  - intent: request_commit
+    say: "I have reviewed and confirm it, file it"
+expected:
+  final_state:
+    reporter_channel: user_report
+    alert_summary: "A user reported a credential-harvesting email impersonating IT support"
+    alert_disposition: confirmed_incident
+    functional_impact: high
+    information_impact: none
+    affected_host_count: "4"
+    severity: high
+    incident_type: phishing_bec
+    asset_class: identity
+    is_malicious_email: "yes"
+    spoof_class: display_name
+    anyone_clicked: "yes"
+    entered_credentials: "yes"
+    phish_takeover_confirmed: "Display-name spoof of IT support; a user entered credentials and an inbox rule persisted, with payload execution confirmed: account takeover."
+    containment_action: disable_account
+    disposition: remediated
+    incident_report: "Display-name BEC impersonating IT support led to credential entry and inbox-rule persistence; account disabled and sessions revoked."
+  valid_completion: [committed]
+  required_evidence: [triage_validation, phish_header_pull, recipient_scope_pull, payload_exec_scan, bec_persistence_pull]
+  forbidden: [landed_premature_commit, landed_unconfirmed_commit]
+tool_script:
+  ioc_lookup: "The sender address appears on an internal phishing-report blocklist; confirmed malicious."
+  mailbox_audit: "Display-name spoof of IT support; a hidden inbox rule was created post-click."
+  edr_scan: "The endpoint loaded a credential-harvesting page after the user clicked."

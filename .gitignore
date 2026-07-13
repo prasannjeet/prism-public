@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Extracted transcript trees (ship as tarballs in results/prism-full-01/transcripts/)
+results/prism-full-01/claude-haiku-4-5/
+results/prism-full-01/claude-sonnet-4-6/
+results/prism-full-01/gemini-3.1-flash-lite/
+results/prism-full-01/gpt-5.4-mini/
+
+# Regenerated LaTeX outputs (bench.paper_tables / bench.projection_listing defaults)
+paper/

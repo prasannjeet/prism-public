@@ -1,0 +1,215 @@
+# T4 — travel-insurance claim intake + adjudication. The first workflow on the compound-condition
+# engine: covered-reason sub-trees nest four levels deep in all three branches (two paths in
+# baggage), using an AND (death_certificate), an `in`-membership inside an AND
+# (cancel_physician_statement), and one numeric `>` leaf (extra_documentation). Verified profile:
+# a payout decision must be confirmed before commit. No new node kind, validator, or tool type.
+workflow: travel-insurance-claim
+profile: verified
+
+fields:
+  # --- shared head (always active, validated) ---
+  - name: policy_number
+    type: text
+    required: true
+    validate: { length: { min: 6, max: 20 } }
+    prompt: "What is your policy number? (6-20 characters)"
+
+  - name: policy_purchase_date
+    type: date
+    required: true
+    validate: { not_future: true }
+    prompt: "On what date was the policy purchased? (YYYY-MM-DD)"
+
+  - name: claimant_email
+    type: email
+    required: true
+    validate: { pattern: email }
+    prompt: "Which email should we use for the claim?"
+
+  # --- primary driver ---
+  - name: claim_type
+    type: select
+    required: true
+    options: [medical, cancellation, baggage]
+    prompt: "What kind of claim is this: medical, cancellation, or baggage?"
+
+  - name: claimed_amount
+    type: number
+    required: true
+    validate: { range: { min: 1, max: 1000000 } }
+    prompt: "What is the total amount being claimed?"
+
+  # --- MEDICAL branch ---
+  - name: physician_statement
+    type: evidence
+    required: true
+    show_when: claim_type = medical
+    satisfied_by: [upload_physician_statement]
+
+  - name: medical_subtype
+    type: select
+    required: true
+    show_when: claim_type = medical
+    options: [expense, evacuation]
+    prompt: "Is this a medical expense claim or a medical evacuation claim?"
+
+  - name: medical_care_setting
+    type: select
+    required: true
+    show_when: medical_subtype = expense
+    options: [inpatient, outpatient]
+    prompt: "Was the care inpatient or outpatient?"
+
+  - name: admit_discharge_dates
+    type: text
+    required: true
+    show_when: medical_care_setting = inpatient
+    validate: { length: { min: 4, max: 60 } }
+    prompt: "What were the admission and discharge dates?"
+
+  - name: evac_necessity_cert
+    type: evidence
+    required: true
+    show_when: medical_subtype = evacuation
+    satisfied_by: [upload_evac_certification]
+
+  # --- CANCELLATION branch ---
+  - name: proof_of_payment
+    type: evidence
+    required: true
+    show_when: claim_type = cancellation
+    satisfied_by: [upload_proof_of_payment]
+
+  - name: cancellation_cause
+    type: select
+    required: true
+    show_when: claim_type = cancellation
+    options: [medical_reason, non_medical]
+    prompt: "Was the cancellation for a medical reason or a non-medical reason?"
+
+  - name: medical_outcome
+    type: select
+    required: true
+    show_when: cancellation_cause = medical_reason
+    options: [sickness, injury, death]
+    prompt: "What was the medical outcome: sickness, injury, or death?"
+
+  - name: death_certificate
+    type: evidence
+    required: false
+    show_when:
+      all_of:
+        - "cancellation_cause = medical_reason"
+        - "medical_outcome = death"
+    satisfied_by: [upload_death_certificate]
+
+  - name: cancel_physician_statement
+    type: evidence
+    required: false
+    show_when:
+      all_of:
+        - "cancellation_cause = medical_reason"
+        - { field: medical_outcome, in: [sickness, injury] }
+    satisfied_by: [upload_physician_statement]
+
+  - name: non_medical_reason
+    type: select
+    required: true
+    show_when: cancellation_cause = non_medical
+    options: [jury_duty, employer, supplier_default, hurricane_warning]
+    prompt: "What was the non-medical reason for cancelling?"
+
+  - name: named_reason_document
+    type: evidence
+    required: false
+    show_when: cancellation_cause = non_medical
+    satisfied_by: [upload_named_reason_document]
+
+  # --- BAGGAGE branch ---
+  - name: baggage_proof_of_ownership
+    type: evidence
+    required: true
+    show_when: claim_type = baggage
+    satisfied_by: [upload_ownership_proof]
+
+  - name: baggage_subtype
+    type: select
+    required: true
+    show_when: claim_type = baggage
+    options: [lost_in_transit, stolen, damaged]
+    prompt: "Was the baggage lost in transit, stolen, or damaged?"
+
+  - name: police_report_filed
+    type: select
+    required: true
+    show_when: baggage_subtype = stolen
+    options: ["yes", "no"]
+    prompt: "Was a police report filed for the theft?"
+
+  - name: police_report
+    type: evidence
+    required: false
+    show_when: 'police_report_filed = yes'
+    satisfied_by: [upload_police_report]
+
+  - name: damage_severity
+    type: select
+    required: true
+    show_when: baggage_subtype = damaged
+    options: [repairable, total_loss]
+    prompt: "Is the damage repairable or a total loss?"
+
+  - name: repair_estimate
+    type: evidence
+    required: false
+    show_when: damage_severity = repairable
+    satisfied_by: [upload_repair_estimate]
+
+  # --- coordination tail (numeric-guarded evidence) ---
+  - name: extra_documentation
+    type: evidence
+    required: false
+    show_when: { field: claimed_amount, op: ">", value: 10000 }
+    satisfied_by: [upload_supporting_docs]
+
+  # --- conclusions (one per branch, each on its branch-wide always-active document) ---
+  - name: medical_adjudication
+    type: conclusion
+    required: true
+    show_when: claim_type = medical
+    requires_evidence: [physician_statement]
+    prompt: "State the medical claim adjudication, citing the physician statement."
+
+  - name: cancellation_adjudication
+    type: conclusion
+    required: true
+    show_when: claim_type = cancellation
+    requires_evidence: [proof_of_payment]
+    prompt: "State the cancellation claim adjudication, citing the proof of payment."
+
+  - name: baggage_adjudication
+    type: conclusion
+    required: true
+    show_when: claim_type = baggage
+    requires_evidence: [baggage_proof_of_ownership]
+    prompt: "State the baggage claim adjudication, citing the proof of ownership."
+
+tools:
+  - name: upload_physician_statement
+    description: "Attach the attending physician's statement for the claim."
+  - name: upload_evac_certification
+    description: "Attach the medical-necessity certification for an evacuation."
+  - name: upload_proof_of_payment
+    description: "Attach proof of payment for the cancelled trip."
+  - name: upload_death_certificate
+    description: "Attach the death certificate for a death-outcome cancellation."
+  - name: upload_named_reason_document
+    description: "Attach the supporting document for the named non-medical reason."
+  - name: upload_ownership_proof
+    description: "Attach proof of ownership for the claimed baggage items."
+  - name: upload_police_report
+    description: "Attach the filed police report for a theft."
+  - name: upload_repair_estimate
+    description: "Attach the repair estimate for repairable baggage damage."
+  - name: upload_supporting_docs
+    description: "Attach additional supporting documentation for a high-value claim."

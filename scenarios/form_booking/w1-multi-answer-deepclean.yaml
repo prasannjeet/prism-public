@@ -1,0 +1,27 @@
+id: w1-multi-answer-deepclean
+workflow: form_booking
+category: multi_answer
+branch_field: service_type
+beats:
+  - parts:
+      - {say: "Hi, I want to book a deep clean for Maria Gomez, email maria@example.org, on the 5th of March in the afternoon, the home is 120 square metres and yes please clean inside the appliances", field: service_type, value: deep_clean}
+      - {say: "for Maria Gomez", field: customer_name, value: Maria Gomez}
+      - {say: "email maria@example.org", field: customer_email, value: maria@example.org}
+      - {say: "on the 5th of March", field: preferred_date, value: "2026-03-05"}
+      - {say: "in the afternoon", field: preferred_time, value: afternoon}
+      - {say: "120 square metres", field: home_size_sqm, value: "120"}
+      - {say: "clean inside the appliances", field: appliances_inside, value: "yes"}
+  - intent: request_commit
+    say: "all correct, please book it"
+expected:
+  final_state:
+    service_type: deep_clean
+    customer_name: Maria Gomez
+    customer_email: maria@example.org
+    preferred_date: "2026-03-05"
+    preferred_time: afternoon
+    home_size_sqm: "120"
+    appliances_inside: "yes"
+  valid_completion: [committed]
+  required_evidence: []
+  forbidden: []

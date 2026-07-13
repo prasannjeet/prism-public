@@ -1,0 +1,85 @@
+# W2 — production incident triage. The investigation type: alongside answer-fields it uses
+# evidence nodes (satisfied by tools, not user answers) and conclusion nodes (gated by
+# requires_evidence), branching by symptom. Express profile: commit as soon as the engine
+# reports complete (no confirm step — the contrast with W1's verified profile).
+workflow: incident-investigation
+profile: express
+
+fields:
+  # --- shared (always active) ---
+  - name: affected_service
+    type: text
+    required: true
+    prompt: "Which service is affected?"
+
+  - name: symptom
+    type: select
+    required: true
+    options: [server_down, slow_response, error_spike]
+    prompt: "What did you observe?"
+
+  # --- branch: server_down (2 evidence -> conclusion gated on both) ---
+  - name: outage_time
+    type: datetime
+    required: true
+    show_when: symptom = server_down
+    validate: { not_future: true }
+    prompt: "When did the outage start?"
+
+  - name: deploy_check
+    type: evidence
+    required: true
+    show_when: symptom = server_down
+    satisfied_by: [check_deployments]
+
+  - name: log_check
+    type: evidence
+    required: true
+    show_when: symptom = server_down
+    satisfied_by: [check_logs]
+
+  - name: server_root_cause
+    type: conclusion
+    required: true
+    show_when: symptom = server_down
+    requires_evidence: [deploy_check, log_check]
+    prompt: "State the root cause, citing the deployment and log evidence."
+
+  # --- branch: slow_response (1 evidence -> conclusion gated on it) ---
+  - name: latency_window
+    type: text
+    required: true
+    show_when: symptom = slow_response
+    prompt: "Which time window shows the slowdown?"
+
+  - name: metrics_check
+    type: evidence
+    required: true
+    show_when: symptom = slow_response
+    satisfied_by: [check_metrics]
+
+  - name: latency_root_cause
+    type: conclusion
+    required: true
+    show_when: symptom = slow_response
+    requires_evidence: [metrics_check]
+    prompt: "State the root cause, citing the metrics evidence."
+
+  # --- branch: error_spike (no conclusion -> escalate path; see escalation:) ---
+  - name: error_sample
+    type: text
+    required: true
+    show_when: symptom = error_spike
+    prompt: "Paste a representative error or stack trace."
+
+tools:
+  - name: check_deployments
+    description: "Return recent deployments around the outage window."
+  - name: check_logs
+    description: "Return error logs for the affected service and window."
+  - name: check_metrics
+    description: "Return latency/throughput metrics for the window."
+
+escalation:
+  when: evidence_insufficient
+  action: escalate_to_engineer

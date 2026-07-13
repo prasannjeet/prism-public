@@ -1,0 +1,36 @@
+id: t4-digression-return-medical
+workflow: travel_insurance_claim
+category: digression_return
+branch_field: claim_type
+beats:
+  - parts:
+      - {say: "policy POL-700800", field: policy_number, value: POL-700800}
+      - {say: "purchased 2025-06-15", field: policy_purchase_date, value: "2025-06-15"}
+      - {say: "email noah@example.com", field: claimant_email, value: noah@example.com}
+  - intent: digress
+    say: "by the way, does my policy cover dental treatment abroad?"
+  - parts:
+      - {say: "anyway, this is a medical claim", field: claim_type, value: medical}
+      - {say: "amount 2100", field: claimed_amount, value: "2100"}
+      - {say: "here is the physician statement", field: physician_statement, value: ""}
+      - {say: "it's a medical expense claim", field: medical_subtype, value: expense}
+      - {say: "the care was outpatient", field: medical_care_setting, value: outpatient}
+  - parts:
+      - {say: "the outpatient care is covered, approve it", field: medical_adjudication, value: "The outpatient care is covered under the policy; the claim is approved."}
+  - intent: request_commit
+    say: "that's correct, file the decision"
+expected:
+  final_state:
+    policy_number: POL-700800
+    policy_purchase_date: "2025-06-15"
+    claimant_email: noah@example.com
+    claim_type: medical
+    claimed_amount: "2100"
+    medical_subtype: expense
+    medical_care_setting: outpatient
+    medical_adjudication: "The outpatient care is covered under the policy; the claim is approved."
+  valid_completion: [committed]
+  required_evidence: [physician_statement]
+  forbidden: []
+tool_script:
+  upload_physician_statement: "Attending physician confirms outpatient treatment for the stated condition."

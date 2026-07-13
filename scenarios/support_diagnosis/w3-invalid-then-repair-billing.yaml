@@ -1,0 +1,39 @@
+id: w3-invalid-then-repair-billing
+workflow: support_diagnosis
+category: invalid_then_repair
+branch_field: category
+beats:
+  - intent: invalid
+    parts:
+      - {say: "my account is ACC-12", field: account_id, value: ACC-12}
+  - intent: correct
+    parts:
+      - {say: "sorry, the full account ID is ACC-667788", field: account_id, value: ACC-667788}
+  - parts:
+      - {say: "email is maya@example.com", field: customer_email, value: maya@example.com}
+      - {say: "I'm on enterprise", field: plan_tier, value: enterprise}
+      - {say: "my last invoice looks far too high", field: issue_summary, value: "My last invoice amount looks far too high"}
+      - {say: "this is a billing issue", field: category, value: billing}
+  - parts:
+      - {say: "the invoice is INV-50500", field: invoice_number, value: INV-50500}
+      - {say: "pull the billing history", field: billing_lookup, value: ""}
+      - {say: "check the payment status", field: payment_check, value: ""}
+  - parts:
+      - {say: "the high amount was an annual add-on renewal, that's the resolution", field: billing_resolution, value: "The higher total reflects a scheduled annual add-on renewal, not an error; the charge stands."}
+  - intent: request_commit
+    say: "all correct now, file the ticket"
+expected:
+  final_state:
+    account_id: ACC-667788
+    customer_email: maya@example.com
+    plan_tier: enterprise
+    issue_summary: "My last invoice amount looks far too high"
+    category: billing
+    invoice_number: INV-50500
+    billing_resolution: "The higher total reflects a scheduled annual add-on renewal, not an error; the charge stands."
+  valid_completion: [committed]
+  required_evidence: [billing_lookup, payment_check]
+  forbidden: [landed_invalid_value]
+tool_script:
+  check_billing_history: "Invoice INV-50500 includes an annual add-on renewal line in addition to the base plan."
+  check_payment_status: "Payment captured once successfully; no duplicate charges on the account."

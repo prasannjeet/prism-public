@@ -1,0 +1,26 @@
+id: w2-happy-slow-response
+workflow: incident_investigation
+category: happy_path
+branch_field: symptom
+beats:
+  - parts:
+      - {say: "The search-service is sluggish", field: affected_service, value: search-service}
+      - {say: "it's a slow response, requests are crawling", field: symptom, value: slow_response}
+      - {say: "the slowdown is in the 14:00 to 15:00 window", field: latency_window, value: "14:00-15:00 UTC"}
+  - parts:
+      - {say: "pull the latency metrics for that window", field: metrics_check, value: ""}
+  - parts:
+      - {say: "p99 latency tripled when the cache hit rate dropped, that's the cause", field: latency_root_cause, value: "Cache hit rate collapse drove p99 latency up threefold across the window."}
+  - intent: request_commit
+    say: "good, file that conclusion"
+expected:
+  final_state:
+    affected_service: search-service
+    symptom: slow_response
+    latency_window: "14:00-15:00 UTC"
+    latency_root_cause: "Cache hit rate collapse drove p99 latency up threefold across the window."
+  valid_completion: [committed]
+  required_evidence: [metrics_check]
+  forbidden: [landed_premature_commit]
+tool_script:
+  check_metrics: "p99 latency 220ms to 680ms over 14:00-15:00; cache hit rate fell from 0.94 to 0.41."
