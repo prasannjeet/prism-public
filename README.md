@@ -1,6 +1,10 @@
 # PRISM: Bounded Autonomy for LLM Agents via Workflow Projection and Deterministic Consequence Boundaries
 
-Research artifact for a double-blind submission. It contains the complete runtime, the six
+Research artifact for the paper *PRISM: Bounded Autonomy for LLM Agents via Workflow
+Projection and Deterministic Consequence Boundaries* (Prasannjeet Singh, School of
+Informatics, University of Skövde), accepted at the [REALM
+workshop](https://openreview.net/forum?id=ckKOi3zWcY) at EMNLP 2026. It contains the
+complete runtime, the six
 workflow definitions, the 88 benchmark scenarios, the evaluation harness, and the full frozen
 data of the benchmark run reported in the paper (all 3,961 conversation transcripts plus the
 aggregate result files), so every number in the paper can be verified from this repository alone.
@@ -64,7 +68,7 @@ marked `live` and excluded by default). It includes an oracle sweep that drives 
 88 scenarios to its reference completion, proving each reference outcome reachable by the engine.
 (For the four escalate-expected scenarios the oracle drives the dispatcher directly; the two
 workflows hosting them never advertise the escalate tool to agents, an affordance gap discussed
-in the paper's Limitations.)
+in the paper's Results.)
 
 ## Run a scenario end to end, offline
 
@@ -178,9 +182,26 @@ configuration (no `admitted_` counterpart can be non-zero for a structural rejec
 
 `results/turnbudget-01/aggregate/` holds the same eight aggregate files for the
 single-model (gemini-3.1-flash-lite) continuation-budget sensitivity re-run
-quoted in the paper's Limitations (47.8% to 48.1%); its raw transcripts are not
+quoted in the paper's Results (47.8% to 48.1%); its raw transcripts are not
 shipped, only the aggregates behind those two numbers.
+
+## Citing this work
+
+- Paper and reviews: https://openreview.net/forum?id=ckKOi3zWcY
+- Interactive results explorer, pre-generated from the frozen run: https://prism-realm.pages.dev
+
+```bibtex
+@inproceedings{singh2026prism,
+  title     = {{PRISM}: Bounded Autonomy for {LLM} Agents via Workflow Projection
+               and Deterministic Consequence Boundaries},
+  author    = {Singh, Prasannjeet},
+  booktitle = {Proceedings of the {REALM} Workshop at {EMNLP} 2026},
+  year      = {2026},
+  address   = {Budapest, Hungary},
+  url       = {https://openreview.net/forum?id=ckKOi3zWcY}
+}
+```
 
 ## License
 
-MIT (see `LICENSE`). Released anonymously for double-blind review.
+MIT (see `LICENSE`).
